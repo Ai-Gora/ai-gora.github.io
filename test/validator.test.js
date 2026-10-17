@@ -129,10 +129,12 @@ test('--out guard refuses root, parent and outside paths', () => {
 
 test('build.js exits non-zero on --out . and leaves the repo intact', async () => {
   const { spawnSync } = await import('node:child_process');
-  const r = spawnSync(process.execPath, [path.join(REPO, 'scripts/build.js'), '--out', '.'], { encoding: 'utf8' });
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'aigora-out-'));
+  for (const d of ['articles', 'quizzes', 'topics', 'media']) fs.cpSync(path.join(REPO, d), path.join(tmpDir, d), { recursive: true });
+  const r = spawnSync(process.execPath, [path.join(REPO, 'scripts/build.js'), '--root', tmpDir, '--out', '.'], { encoding: 'utf8' });
   assert.equal(r.status, 2);
   assert.match(r.stderr, /refusing --out/);
-  assert.ok(fs.existsSync(path.join(REPO, 'package.json')));
+  assert.ok(fs.existsSync(path.join(tmpDir, 'articles')));
 });
 
 test('JSON-LD escapes < as \\u003c', () => {
@@ -174,4 +176,30 @@ test("article slug 'index' is reserved", () => {
     edit(d, 'articles/science/index.md', (t) => t.replace('slug: photosynthesis', 'slug: index'));
   });
   hasError(errors, /slug 'index' is reserved/);
+});
+
+test('citation inside a ### subsection counts for its ## section', () => {
+  const { errors } = fixture((d) => edit(d, PHOTO, (t) => { const n = t.replace(
+    'Almost all oxygen in the atmosphere comes from photosynthesis.[^1]\nPrinted botany texts spread this knowledge after the [[printing-press|printing press]].',
+    'Almost all oxygen in the atmosphere comes from photosynthesis.\nPrinted botany texts spread this knowledge after the [[printing-press|printing press]].\n\n### Detail {#detail}\n\nMost oxygen is made by phytoplankton in the ocean.[^1]'
+  ); assert.notEqual(n, t, 'fixture edit must apply'); return n; }));
+  assert.deepEqual(errors, []);
+});
+
+test('### subsection citation does not count for the next ## section', () => {
+  const { errors } = fixture((d) => edit(d, PHOTO, (t) => t
+    .replace('Plants take in carbon dioxide and water.[^1]', 'Plants take in carbon dioxide and water.')
+    .replace('They release oxygen as a by-product.[^1]', 'They release oxygen as a by-product.')
+    .replace('The overall equation is 6 CO2 + 6 H2O + light → C6H12O6 + 6 O2.[^2]', 'The overall equation is 6 CO2 + 6 H2O + light → C6H12O6 + 6 O2.\n\n### Detail {#detail}\n\nThe equation balances atoms on both sides.[^2]')
+    .replace('In plants, photosynthesis takes place in chloroplasts.[^2]', 'In plants, photosynthesis takes place in chloroplasts.')
+    .replace('Chloroplasts contain the green pigment chlorophyll.[^2]', 'Chloroplasts contain the green pigment chlorophyll.')));
+  hasError(errors, /section '#chloroplasts' has no citation/);
+  assert.ok(!errors.some((e) => e.includes("section '#inputs-outputs' has no citation")));
+});
+
+test('article JSON output escapes < and keeps jsonld.headline', () => {
+  const { content } = fixture((d) => edit(d, PHOTO, (t) => t.replace('title: Photosynthesis', 'title: "Photo</script>"')));
+  const out = buildOutputs(content)['a/photosynthesis.json'];
+  assert.ok(!out.includes('<'));
+  assert.equal(JSON.parse(out).jsonld.headline, 'Photo</script>');
 });
