@@ -1,0 +1,9 @@
+id: philosophy
+title: Philosophy
+description: Questions about knowledge, reality, reasoning and how to live, and the history of the answers.
+parent: null
+related: [history]
+i18n:
+  sl:
+    title: Filozofija
+    description: "Vprašanja o znanju, resničnosti, sklepanju in o tem, kako živeti, ter zgodovina odgovorov nanje."
