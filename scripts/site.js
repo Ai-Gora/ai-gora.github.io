@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { SITE_NAME, safeJson, jsonLd } from './lib.js';
-import { lessonPath } from '../web/assets/lesson-path.js';
+import { lessonPath, pathLanguages } from '../web/assets/lesson-path.js';
 
 const ASSET_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'web', 'assets');
 
@@ -70,6 +70,7 @@ export function renderBlocks(text, ctx) {
 const NAV = [['index.html', 'Home'], ['search.html', 'Search'], ['paths/index.html', 'Lesson paths'], ['quiz/index.html', 'Quizzes']];
 
 function page({ title, base, lang = 'en', current, body, head = '', scripts = [], description = '' }) {
+  const uiLang = lang === 'en' ? '' : ' lang="en"'; // site chrome is English-only for now
   const nav = NAV.map(([href, label]) => `<li><a href="${base}${href}"${current === href ? ' aria-current="page"' : ''}>${label}</a></li>`).join('');
   return `<!doctype html>
 <html lang="${esc(lang)}">
@@ -82,7 +83,7 @@ ${description ? `<meta name="description" content="${esc(description)}">\n` : ''
 ${head}</head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
-<header class="site">
+<header class="site"${uiLang}>
 <a class="brand" href="${base}index.html">${SITE_NAME}</a>
 <nav aria-label="Site"><ul>${nav}</ul></nav>
 <form class="quick-search" role="search" aria-label="Site search" action="${base}search.html" method="get">
@@ -94,7 +95,7 @@ ${head}</head>
 <main id="main" tabindex="-1">
 ${body}
 </main>
-<footer class="site">
+<footer class="site"${uiLang}>
 <p>Content: <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a>. Code: MIT. <a href="${base}llms.txt">llms.txt</a> · <a href="${base}data/graph.json">graph.json</a> · <a href="https://github.com/Ai-Gora/ai-gora.github.io">Source on GitHub</a></p>
 </footer>
 ${scripts.map((s) => `<script type="module" src="${base}assets/${s}"></script>`).join('\n')}
@@ -202,8 +203,8 @@ function pathList(steps, ctx, base) {
     const a = ctx.bySlug.get(s.slug);
     const secs = a.sections.filter((x) => x.level === 2 && x.anchor && !['key-claims', 'sources'].includes(x.anchor));
     return `<li class="step">
-<h3><a href="${base}a/${s.slug}.html">${esc(s.title)}</a></h3>
-<p class="muted">${esc(levelLabel(s.level))}${s.reason === 'prerequisite' ? ' · prerequisite' : ''}</p>
+<h3 lang="${esc(s.lang)}"><a href="${base}a/${s.slug}.html">${esc(s.title)}</a></h3>
+<p class="muted">${esc(levelLabel(s.level))} · ${esc(langName(s.lang))}${s.reason === 'prerequisite' ? ' · prerequisite' : ''}</p>
 <p>${esc(a.fm.summary.trim())}</p>
 ${secs.length ? `<details><summary>Sections</summary><ul>${secs.map((x) => `<li><a href="${base}a/${s.slug}.html#${x.anchor}">${esc(x.heading)}</a></li>`).join('')}</ul></details>` : ''}
 ${s.quizzes.length ? `<p><a href="${base}quiz/${s.slug}.html">Quiz (${s.quizzes.length} question${s.quizzes.length === 1 ? '' : 's'})</a> <span class="progress" data-progress="${s.slug}"></span></p>` : ''}
@@ -216,6 +217,7 @@ export function buildSite(content, data) {
   const graph = JSON.parse(data['data/graph.json']);
   const topicsData = JSON.parse(data['data/topics.json']);
   const backlinks = JSON.parse(data['data/backlinks.json']);
+  const langs = pathLanguages(graph);
   const sorted = [...content.articles].sort((x, y) => x.fm.slug.localeCompare(y.fm.slug));
   const ctx = {
     root: content.root,
@@ -260,13 +262,27 @@ export function buildSite(content, data) {
   out['quiz/index.html'] = page({ title: 'Quizzes', base: '../', current: 'quiz/index.html', scripts: ['paths.js'], body: `<h1>Quizzes</h1>
 <ul class="list">${content.quizzes.slice().sort((x, y) => x.slug.localeCompare(y.slug)).map((q) => `<li><a href="${q.slug}.html">${esc(ctx.titleOf(q.slug))}</a> <span class="muted">· ${q.questions.length} question${q.questions.length === 1 ? '' : 's'}</span> <span class="progress" data-progress="${q.slug}"></span></li>`).join('')}</ul>` });
 
+  const pathIntro = 'Choose an interest to get an ordered reading list. Prerequisites come first, then articles from intro to deep.';
+  const langFilterNav = (currentLang, hrefFor) => {
+    const item = (code) => {
+      const href = hrefFor(code);
+      if (href === null) return '';
+      const current = code === currentLang ? ' aria-current="page"' : '';
+      const langAttr = code ? ` lang="${esc(code)}"` : '';
+      return `<li><a href="${esc(href)}"${current}${langAttr}>${esc(code ? langName(code) : 'All languages')}</a></li>`;
+    };
+    return `<nav class="lang-filter" aria-label="Language"><ul>${[null, ...langs].map(item).join('')}</ul></nav>`;
+  };
+
   out['paths/index.html'] = page({ title: 'Lesson paths', base: '../', current: 'paths/index.html', scripts: ['paths.js'], body: `<h1>Lesson paths</h1>
-<p>Choose an interest to get an ordered reading list. Prerequisites come first, then articles from intro to deep.</p>
+${langFilterNav(null, (code) => (code ? `${code}/index.html` : 'index.html'))}
+<p>${pathIntro}</p>
 <ul class="list">${usedTopics.map((t) => `<li><a href="${t.id}.html">${esc(t.title)}</a> <span class="muted">· ${lessonPath(graph, topicsData, [t.id]).length} articles</span><br><span class="desc">${esc(t.description)}</span></li>`).join('')}</ul>
 <form id="path-builder" data-js hidden>
 <fieldset><legend>Combine interests</legend>
 <ul class="options">${usedTopics.map((t) => `<li><input type="checkbox" id="i-${t.id}" name="interest" value="${t.id}"> <label for="i-${t.id}">${esc(t.title)}</label></li>`).join('')}</ul>
 </fieldset>
+<p><label for="path-lang">Language</label> <select id="path-lang" name="lang"><option value="">All languages</option>${langs.map((c) => `<option value="${esc(c)}">${esc(langName(c))}</option>`).join('')}</select></p>
 <button type="submit">Build my path</button>
 </form>
 <section id="custom-path" aria-live="polite"></section>` });
@@ -274,11 +290,30 @@ export function buildSite(content, data) {
   for (const t of usedTopics) {
     const steps = lessonPath(graph, topicsData, [t.id]);
     const related = (t.related || []).filter((r) => usedTopics.some((u) => u.id === r));
+    const langHref = (code) => (!code ? `${t.id}.html` : (lessonPath(graph, topicsData, [t.id], { lang: code }).length ? `${code}/${t.id}.html` : null));
     out[`paths/${t.id}.html`] = page({ title: `Lesson path: ${t.title}`, base: '../', current: 'paths/index.html', scripts: ['paths.js'], body: `<h1>Lesson path: ${esc(t.title)}</h1>
+${langFilterNav(null, langHref)}
 <p>${esc(t.description)}</p>
 <h2>Reading order</h2>
 ${pathList(steps, ctx, '../')}
 ${related.length ? `<h2>Related interests</h2><ul class="chips">${related.map((r) => `<li><a href="${r}.html">${esc(ctx.topicTitle(r))}</a></li>`).join('')}</ul>` : ''}` });
+  }
+
+  for (const code of langs) {
+    const codeTopics = usedTopics.filter((t) => lessonPath(graph, topicsData, [t.id], { lang: code }).length);
+    const indexHref = (c) => (!c ? '../index.html' : c === code ? 'index.html' : `../${c}/index.html`);
+    out[`paths/${code}/index.html`] = page({ title: `Lesson paths (${langName(code)})`, base: '../../', current: 'paths/index.html', scripts: ['paths.js'], body: `<h1>Lesson paths (${esc(langName(code))})</h1>
+${langFilterNav(code, indexHref)}
+<p>${pathIntro}</p>
+<ul class="list">${codeTopics.map((t) => `<li><a href="${t.id}.html">${esc(t.title)}</a> <span class="muted">· ${lessonPath(graph, topicsData, [t.id], { lang: code }).length} articles</span><br><span class="desc">${esc(t.description)}</span></li>`).join('')}</ul>` });
+    for (const t of codeTopics) {
+      const topicHref = (c) => (!c ? `../${t.id}.html` : c === code ? `${t.id}.html` : (lessonPath(graph, topicsData, [t.id], { lang: c }).length ? `../${c}/${t.id}.html` : null));
+      out[`paths/${code}/${t.id}.html`] = page({ title: `Lesson path: ${t.title} (${langName(code)})`, base: '../../', current: 'paths/index.html', scripts: ['paths.js'], body: `<h1>Lesson path: ${esc(t.title)} (${esc(langName(code))})</h1>
+${langFilterNav(code, topicHref)}
+<p>${esc(t.description)}</p>
+<h2>Reading order</h2>
+${pathList(lessonPath(graph, topicsData, [t.id], { lang: code }), ctx, '../../')}` });
+    }
   }
 
   for (const f of fs.readdirSync(ASSET_DIR).sort()) out[`assets/${f}`] = fs.readFileSync(path.join(ASSET_DIR, f), 'utf8');

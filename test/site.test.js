@@ -118,6 +118,25 @@ test('lesson path filters by language and swaps translated prerequisites', () =>
   assert.deepEqual(pathLanguages(graph), ['en', 'sl']);
 });
 
+test('site builds a no-JS language filter and per-language lesson path pages', () => {
+  for (const f of ['paths/sl/index.html', 'paths/en/index.html', 'paths/sl/linguistics.html', 'paths/en/linguistics.html']) assert.ok(f in site, `missing ${f}`);
+
+  assert.ok(site['paths/sl/linguistics.html'].includes('belokranjska-narecja.html'), 'sl path links the sl article');
+  assert.ok(!site['paths/sl/linguistics.html'].includes('a/bela-krajina-dialects.html'), 'sl path does not link the en article');
+  assert.ok(site['paths/en/linguistics.html'].includes('bela-krajina-dialects.html'), 'en path links the en article');
+  assert.ok(!site['paths/en/linguistics.html'].includes('belokranjska-narecja'), 'en path does not link the sl article');
+
+  const index = site['paths/index.html'];
+  assert.ok(index.includes('<nav class="lang-filter" aria-label="Language">'), 'index has a language filter nav');
+  assert.ok(index.includes('sl/index.html'), 'index links the sl variant');
+  assert.ok(index.includes('<label for="path-lang">'), 'index offers a language select');
+
+  assert.ok(site['paths/sl/index.html'].includes('<a href="index.html" aria-current="page" lang="sl">Slovenščina</a>'), 'sl index marks Slovenščina current');
+  assert.ok(site['paths/linguistics.html'].includes('<a href="linguistics.html" aria-current="page">All languages</a>'), 'all-languages path marks All languages current');
+  assert.ok(site['paths/linguistics.html'].includes('<h3 lang="en">'), 'steps declare their language');
+  assert.ok(site['paths/linguistics.html'].includes('Intro · English'), 'meta line names the step language');
+});
+
 test('lesson path replaces a foreign prerequisite with its existing translation', () => {
   const g = { nodes: [
     { slug: 'a-sl', id: 'a-sl', title: 'A sl', topics: ['other'], level: 'intro', lang: 'sl', prerequisites: [], sections: [], quizzes: [] },
