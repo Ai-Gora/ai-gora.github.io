@@ -23,7 +23,7 @@ export function renderInline(text, ctx) {
       return `<a href="${href}">${txt ? txt.trim() : esc(title || slug)}</a>`;
     });
     s = s.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (_m, txt, url) => `<a href="${safeUrl(url)}">${txt}</a>`);
-    s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>').replace(/(^|[\s(])\*([^*\s][^*]*)\*/g, '$1<em>$2</em>');
+    s = s.split(/(<[^>]+>)/).map((seg, j) => (j % 2 ? seg : seg.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>').replace(/(^|[\s(])\*([^*\s][^*]*)\*/g, '$1<em>$2</em>'))).join('');
     s = s.replace(/\[\^(\d+)\]/g, (_m, n) => `<sup class="cite"><a href="#source-${n}" aria-label="Source ${n}">[${n}]</a></sup>`);
     return s;
   }).join('');
@@ -211,7 +211,8 @@ export function buildSite(content, data) {
     headingOf: (s, an) => content.bySlug.get(s)?.sections.find((x) => x.anchor === an)?.heading || an,
     topicTitle: (t) => content.topics.get(t)?.title || t,
   };
-  const out = {};
+  // Guard: a page path written twice (e.g. a topic or slug named 'index') is a build error, never a silent overwrite.
+  const out = new Proxy({}, { set(t, k, v) { if (Object.hasOwn(t, k)) throw new Error(`duplicate output path: ${String(k)}`); t[k] = v; return true; } });
   for (const a of sorted) out[`a/${a.fm.slug}.html`] = articlePage(a, ctx);
   for (const q of content.quizzes) out[`quiz/${q.slug}.html`] = quizPage(q, ctx);
 
@@ -266,5 +267,5 @@ ${related.length ? `<h2>Related interests</h2><ul class="chips">${related.map((r
 
   for (const f of fs.readdirSync(ASSET_DIR).sort()) out[`assets/${f}`] = fs.readFileSync(path.join(ASSET_DIR, f), 'utf8');
   out['.nojekyll'] = '';
-  return out;
+  return { ...out };
 }

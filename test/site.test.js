@@ -40,6 +40,12 @@ test('inline renderer escapes HTML and neutralises javascript: links', () => {
   assert.equal(esc('"&\''), '&quot;&amp;&#39;');
 });
 
+test('inline renderer keeps emphasis out of link hrefs', () => {
+  const html = renderInline('[x](https://e.org/a*b*c) and *em*', { base: '../', titleOf: (s) => s });
+  assert.ok(html.includes('href="https://e.org/a*b*c"'));
+  assert.ok(html.includes('<em>em</em>'));
+});
+
 test('quiz page works without JS: labelled inputs and a Show answer disclosure', () => {
   const html = site['quiz/printing-press.html'];
   assert.match(html, /<legend>Gutenberg developed/);
@@ -72,4 +78,10 @@ test('search page has a no-JS browse fallback and a labelled search field', asyn
   assert.match(html, /<label for="q">/);
   assert.match(html, /<noscript>/);
   assert.match(html, /id="browse"[\s\S]*a\/photosynthesis\.html#chloroplasts/);
+});
+
+test('buildSite throws instead of overwriting a page (topic id "index" bypassing validation)', () => {
+  const rename = (json) => JSON.stringify(JSON.parse(json), (k, v) => (v === 'linguistics' ? 'index' : v));
+  const forged = { ...data, 'data/topics.json': rename(data['data/topics.json']), 'data/graph.json': rename(data['data/graph.json']) };
+  assert.throws(() => buildSite(content, forged), /duplicate output path: paths\/index\.html/);
 });

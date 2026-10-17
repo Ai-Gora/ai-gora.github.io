@@ -6,7 +6,7 @@
   "additionalProperties": false,
   "required": ["id", "title", "description"],
   "properties": {
-    "id": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$" },
+    "id": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$", "not": { "const": "index" } },
     "title": { "type": "string", "minLength": 1 },
     "description": { "type": "string", "minLength": 1 },
     "parent": { "type": ["string", "null"] },

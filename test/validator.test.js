@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { loadContent, buildOutputs, resolveOutDir } from '../scripts/lib.js';
+import { loadContent, buildOutputs, mergeOutputs, resolveOutDir } from '../scripts/lib.js';
 
 const REPO = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -65,6 +65,16 @@ test('quiz ref to missing anchor fails', () => {
 test('quiz answer out of range fails', () => {
   const { errors } = fixture((d) => edit(d, 'quizzes/photosynthesis.yaml', (t) => t.replace('answer: 0', 'answer: 7')));
   hasError(errors, /q1: answer must be an option index/);
+});
+
+test('missing Sources section fails', () => {
+  const { errors } = fixture((d) => edit(d, PHOTO, (t) => t.replace('## Sources {#sources}\n', '')));
+  hasError(errors, /missing '## Sources \{#sources\}' section/);
+});
+
+test('multi answer with duplicate indexes fails', () => {
+  const { errors } = fixture((d) => edit(d, 'quizzes/photosynthesis.yaml', (t) => t.replace('type: single', 'type: multi').replace('answer: 0', 'answer: [0, 0]')));
+  hasError(errors, /q1: multi answer indexes must be unique/);
 });
 
 test('unknown topic fails', () => {
@@ -131,4 +141,22 @@ test('translation pointing at missing id fails', () => {
 test('translation pointing at existing id with wrong lang fails', () => {
   const { errors } = fixture((d) => edit(d, PHOTO, (t) => t.replace('lang: en', 'lang: en\ntranslations: {sl: aig-000002}')));
   hasError(errors, /translation sl: 'aig-000002' has lang 'en'/);
+});
+
+test('mergeOutputs rejects duplicate output paths and merges distinct maps', () => {
+  assert.throws(() => mergeOutputs({ 'x.html': 'a' }, { 'x.html': 'b' }), /duplicate output path: x\.html/);
+  assert.deepEqual(mergeOutputs({ 'a.html': '1' }, { 'b.html': '2' }), { 'a.html': '1', 'b.html': '2' });
+});
+
+test("topic id 'index' is reserved", () => {
+  const { errors } = fixture((d) => fs.writeFileSync(path.join(d, 'topics/index.yaml'), 'id: index\ntitle: Index\ndescription: x\nparent: null\nrelated: []\n'));
+  hasError(errors, /topic id 'index' is reserved/);
+});
+
+test("article slug 'index' is reserved", () => {
+  const { errors } = fixture((d) => {
+    fs.renameSync(path.join(d, 'articles/science/photosynthesis.md'), path.join(d, 'articles/science/index.md'));
+    edit(d, 'articles/science/index.md', (t) => t.replace('slug: photosynthesis', 'slug: index'));
+  });
+  hasError(errors, /slug 'index' is reserved/);
 });

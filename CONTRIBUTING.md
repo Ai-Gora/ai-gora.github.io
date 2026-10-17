@@ -4,10 +4,10 @@ Everything happens through pull requests. Git history is the revision history; d
 
 ## Add an article
 
-1. Create `articles/<category>/<slug>.md`. File name = `slug`.
+1. Create `articles/<category>/<slug>.md`. File name = `slug`. `index` is reserved (for slugs and topic ids) because it would clash with the `index.html` pages.
 2. Pick the next free `id` (`aig-NNNNNN`). Never change an `id`, even on rename.
 3. Fill the frontmatter (see `schema/article.schema.json`). Every `topics` entry needs a `topics/<topic>.yaml`.
-4. Body order: short answer, `##` sections each with a stable `{#anchor}`, `## Key claims {#key-claims}`, `## Sources {#sources}`.
+4. Body order: short answer, `##` sections each with a stable `{#anchor}`, `## Key claims {#key-claims}`, `## Sources {#sources}` (both required).
 5. Writing rules: one claim per sentence, values with units, observation separate from interpretation.
 6. Cite with `[^n]` where `n` is a `sources[].id`. Every source must be cited. Every `##` section except Sources needs at least one citation, and every Key claims bullet must cite.
 7. Link with `[[slug]]`, `[[slug#anchor]]` or `[[slug#anchor|text]]`. Links are checked at build time.
