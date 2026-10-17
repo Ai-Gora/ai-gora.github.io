@@ -19,6 +19,7 @@ prerequisites: [printing-press]
 sources:
   - {id: 1, title: "Slovene dialects", url: "https://en.wikipedia.org/wiki/Slovene_dialects", accessed: 2026-10-17}
   - {id: 2, title: "Karta slovenskih narečij (ZRC SAZU)", url: "https://fran.si/204/sla-slovenski-lingvisticni-atlas", accessed: 2026-10-17}
+  - {id: 3, title: "Primož Trubar", url: "https://www.britannica.com/biography/Primoz-Trubar", accessed: 2026-10-17}
 license: CC-BY-SA-4.0
 derived_from: []
 ---
@@ -40,6 +41,7 @@ The Črnomelj dialect is centred on the town of Črnomelj.[^2]
 
 ## Standard language {#standard}
 
+The first printed books in Slovene were published by Primož Trubar in 1550.[^3]
 Standard written Slovene grew with print; see [[printing-press#effects|effects of printing]].
 
 ## Key claims {#key-claims}

@@ -2,12 +2,14 @@
 // Usage: node scripts/build.js [--check] [--root <dir>] [--out <dir>]
 import fs from 'node:fs';
 import path from 'node:path';
-import { loadContent, buildOutputs } from './lib.js';
+import { fileURLToPath } from 'node:url';
+import { loadContent, buildOutputs, resolveOutDir } from './lib.js';
 
 const args = process.argv.slice(2);
 const opt = (k, d) => { const i = args.indexOf(k); return i >= 0 ? args[i + 1] : d; };
-const root = path.resolve(opt('--root', path.join(path.dirname(new URL(import.meta.url).pathname), '..')));
-const outDir = path.resolve(root, opt('--out', 'dist'));
+const root = path.resolve(opt('--root', path.join(path.dirname(fileURLToPath(import.meta.url)), '..')));
+let outDir;
+try { outDir = resolveOutDir(root, opt('--out', 'dist')); } catch (e) { console.error(`✗ ${e.message}`); process.exit(2); }
 const check = args.includes('--check');
 
 const { errors, content } = loadContent(root);

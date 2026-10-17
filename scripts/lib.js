@@ -2,11 +2,12 @@
 // Pure Node + js-yaml + ajv. No network, no server.
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import yaml from 'js-yaml';
 import Ajv from 'ajv/dist/2020.js';
 import addFormats from 'ajv-formats';
 
-const SCHEMA_DIR = path.join(path.dirname(new URL(import.meta.url).pathname), '..', 'schema');
+const SCHEMA_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'schema');
 export const SITE_NAME = 'Aigora';
 export const SITE_URL = 'https://ai-gora.github.io/aigora';
 
@@ -119,6 +120,11 @@ export function loadContent(root) {
       a.links.push(l);
     }
     for (const p of a.fm.prerequisites || []) if (!bySlug.has(p)) err(a.file, `unknown prerequisite '${p}'`);
+    for (const [lang, tid] of Object.entries(a.fm.translations || {})) {
+      const t = byId.get(tid);
+      if (!t) err(a.file, `translation ${lang}: '${tid}' does not exist`);
+      else if (t.fm.lang !== lang) err(a.file, `translation ${lang}: '${tid}' has lang '${t.fm.lang}'`);
+    }
 
     // Citations
     const ids = new Set(a.fm.sources.map((s) => s.id));
@@ -128,7 +134,15 @@ export function loadContent(root) {
     for (const id of ids) if (!cited.has(id)) err(a.file, `source ${id} is never cited in the body`);
     const kc = a.sections.find((s) => s.anchor === 'key-claims');
     if (!kc) err(a.file, "missing '## Key claims {#key-claims}' section");
-    else if (extractCitations(kc.text).length === 0) err(a.file, 'Key claims section has no citation');
+    else {
+      const bullets = kc.text.split(/\r?\n/).filter((l) => /^\s*[-*]\s+/.test(l));
+      if (!bullets.length) err(a.file, 'Key claims section has no bullet claims');
+      for (const b of bullets) if (!extractCitations(b).length) err(a.file, `Key claims bullet has no citation: "${b.replace(/^\s*[-*]\s+/, '').trim()}"`);
+    }
+    for (const s of a.sections) {
+      if (s.level !== 2 || s.anchor === 'sources' || s.anchor === 'key-claims') continue;
+      if (!extractCitations(s.text).length) err(a.file, `section '#${s.anchor || s.heading}' has no citation (every claim section needs a source)`);
+    }
   }
 
   const quizzes = [];
@@ -163,6 +177,9 @@ export function loadContent(root) {
 
   return { errors, content: { root, topics, articles, bySlug, byId, quizzes } };
 }
+
+// JSON safe to embed in <script type="application/ld+json">.
+export const safeJson = (obj) => JSON.stringify(obj, null, 2).replace(/</g, '\\u003c') + '\n';
 
 const absUrl = (p) => `${SITE_URL}/${p}`;
 
@@ -237,7 +254,7 @@ export function buildOutputs(content) {
 
   for (const a of sorted) {
     put(`a/${a.fm.slug}.md`, a.raw);
-    put(`a/${a.fm.slug}.jsonld`, jsonLd(a));
+    put(`a/${a.fm.slug}.jsonld`, safeJson(jsonLd(a)));
     put(`a/${a.fm.slug}.json`, { frontmatter: a.fm, category: a.category, sections: sectionsOf(a), links: a.links, backlinks: backlinks[a.fm.slug], quiz: quizBySlug.has(a.fm.slug) ? `data/quizzes/${a.fm.slug}.json` : null, jsonld: jsonLd(a) });
   }
 
@@ -254,4 +271,17 @@ export function buildOutputs(content) {
   put('llms-full.txt', sorted.map((a) => `<!-- ${a.fm.id} ${a.fm.slug} -->\n${a.raw.trim()}\n`).join('\n'));
   put('data/manifest.json', { name: SITE_NAME, version: 1, articles: sorted.length, quizzes: quizzes.length, topics: topics.size, files: Object.keys(out).sort() });
   return out;
+}
+
+/** Resolve --out safely: must be strictly inside root (never root itself or outside). */
+export function resolveOutDir(root, out) {
+  const r = fs.realpathSync(path.resolve(root));
+  const o = path.resolve(r, out);
+  const rel = path.relative(r, o);
+  if (!rel || rel.startsWith('..') || path.isAbsolute(rel)) throw new Error(`refusing --out '${out}': must resolve inside ${r} and not be the repo root`);
+  // Also reject symlinked parents escaping the root.
+  let p = o; while (!fs.existsSync(p)) p = path.dirname(p);
+  const real = path.relative(r, fs.realpathSync(p));
+  if (real.startsWith('..') || path.isAbsolute(real) || (!real && p === o)) throw new Error(`refusing --out '${out}': resolves outside ${r} or to the repo root`);
+  return o;
 }

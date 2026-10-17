@@ -9,7 +9,7 @@ Everything happens through pull requests. Git history is the revision history; d
 3. Fill the frontmatter (see `schema/article.schema.json`). Every `topics` entry needs a `topics/<topic>.yaml`.
 4. Body order: short answer, `##` sections each with a stable `{#anchor}`, `## Key claims {#key-claims}`, `## Sources {#sources}`.
 5. Writing rules: one claim per sentence, values with units, observation separate from interpretation.
-6. Cite with `[^n]` where `n` is a `sources[].id`. Every source must be cited; Key claims must cite.
+6. Cite with `[^n]` where `n` is a `sources[].id`. Every source must be cited. Every `##` section except Sources needs at least one citation, and every Key claims bullet must cite.
 7. Link with `[[slug]]`, `[[slug#anchor]]` or `[[slug#anchor|text]]`. Links are checked at build time.
 8. Adapted Wikipedia text: add `derived_from: [{url, revision}]`, keep CC BY-SA attribution. Do not copy Wikimedia branding.
 9. Set `ai_assisted: true` if any AI drafted text. AI output is a draft until a human reviews it (`status: reviewed`).

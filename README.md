@@ -56,7 +56,7 @@ Paths are relative to the site root.
 | `data/quizzes/<slug>.json` | `{ article, slug, questions: [{ id, type, prompt, options?, answer, explain?, ref: "slug#anchor", difficulty?, tags? }] }` |
 | `a/<slug>.md` | raw article source (frontmatter + body) |
 | `a/<slug>.json` | `{ frontmatter, category, sections: [{ anchor, heading, level }], links: [{ slug, anchor, text }], backlinks, quiz: path\|null, jsonld }` |
-| `a/<slug>.jsonld` | schema.org `Article` + `LearningResource` with `license`, `dateModified`, `citation`, `about` (embed in the page `<script type="application/ld+json">`) |
+| `a/<slug>.jsonld` | schema.org `Article` + `LearningResource` with `license`, `dateModified`, `citation`, `about` (`<` escaped as `\u003c`, safe to embed in `<script type="application/ld+json">`) |
 | `llms.txt` | [llmstxt.org](https://llmstxt.org/) index: H1, blockquote, one H2 per primary topic, `## Optional` |
 | `llms-full.txt` | all articles concatenated, each prefixed `<!-- id slug -->` |
 

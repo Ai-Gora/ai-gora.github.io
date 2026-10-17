@@ -3,9 +3,10 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { loadContent, buildOutputs } from '../scripts/lib.js';
+import { fileURLToPath } from 'node:url';
+import { loadContent, buildOutputs, resolveOutDir } from '../scripts/lib.js';
 
-const REPO = path.join(path.dirname(new URL(import.meta.url).pathname), '..');
+const REPO = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 // Copy the real content into a temp dir, apply a mutation, validate.
 function fixture(mutate = () => {}) {
@@ -53,7 +54,7 @@ test('citation to unknown source and uncited source', () => {
 
 test('key claims without citation fails', () => {
   const { errors } = fixture((d) => edit(d, PHOTO, (t) => t.replace('- Photosynthesis releases oxygen.[^1]\n- It happens in chloroplasts in plants.[^2]', '- Photosynthesis releases oxygen.')));
-  hasError(errors, /Key claims section has no citation/);
+  hasError(errors, /Key claims bullet has no citation: "Photosynthesis releases oxygen."/);
 });
 
 test('quiz ref to missing anchor fails', () => {
@@ -88,4 +89,46 @@ test('build outputs follow the data contract', () => {
   assert.equal(ld.license, 'https://creativecommons.org/licenses/by-sa/4.0/');
   assert.match(out['llms.txt'], /^# Aigora\n\n> /);
   assert.match(out['llms.txt'], /## Optional/);
+});
+
+test('one uncited Key claims bullet fails even if another is cited', () => {
+  const { errors } = fixture((d) => edit(d, PHOTO, (t) => t.replace('- It happens in chloroplasts in plants.[^2]', '- It happens in chloroplasts in plants.')));
+  hasError(errors, /Key claims bullet has no citation: "It happens in chloroplasts in plants."/);
+});
+
+test('claim section without citation fails; Sources section is exempt', () => {
+  const { errors } = fixture((d) => edit(d, PHOTO, (t) => t.replace('Chloroplasts contain the green pigment chlorophyll.[^2]', 'Chloroplasts contain chlorophyll.').replace('In plants, photosynthesis takes place in chloroplasts.[^2]', 'In plants, photosynthesis takes place in chloroplasts.')));
+  hasError(errors, /section '#chloroplasts' has no citation/);
+  assert.ok(!errors.some((e) => /#sources/.test(e)));
+});
+
+test('--out guard refuses root, parent and outside paths', () => {
+  for (const bad of ['.', '..', '/tmp/x', '../elsewhere', 'dist/../..']) assert.throws(() => resolveOutDir(REPO, bad), /refusing --out/, bad);
+  assert.equal(resolveOutDir(REPO, 'dist'), path.join(fs.realpathSync(REPO), 'dist'));
+});
+
+test('build.js exits non-zero on --out . and leaves the repo intact', async () => {
+  const { spawnSync } = await import('node:child_process');
+  const r = spawnSync(process.execPath, [path.join(REPO, 'scripts/build.js'), '--out', '.'], { encoding: 'utf8' });
+  assert.equal(r.status, 2);
+  assert.match(r.stderr, /refusing --out/);
+  assert.ok(fs.existsSync(path.join(REPO, 'package.json')));
+});
+
+test('JSON-LD escapes < as \\u003c', () => {
+  const { content } = fixture((d) => edit(d, PHOTO, (t) => t.replace('title: Photosynthesis', 'title: "Photo</script><b>"')));
+  const out = buildOutputs(content);
+  assert.ok(!out['a/photosynthesis.jsonld'].includes('<'));
+  assert.match(out['a/photosynthesis.jsonld'], /Photo\\u003c\/script>\\u003cb>/);
+  assert.equal(JSON.parse(out['a/photosynthesis.jsonld']).headline, 'Photo</script><b>');
+});
+
+test('translation pointing at missing id fails', () => {
+  const { errors } = fixture((d) => edit(d, PHOTO, (t) => t.replace('lang: en', 'lang: en\ntranslations: {sl: aig-999999}')));
+  hasError(errors, /translation sl: 'aig-999999' does not exist/);
+});
+
+test('translation pointing at existing id with wrong lang fails', () => {
+  const { errors } = fixture((d) => edit(d, PHOTO, (t) => t.replace('lang: en', 'lang: en\ntranslations: {sl: aig-000002}')));
+  hasError(errors, /translation sl: 'aig-000002' has lang 'en'/);
 });
