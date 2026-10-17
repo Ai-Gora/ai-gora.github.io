@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Aigora media licence sidecar",
+  "type": "object",
+  "required": ["file", "license", "author", "source"],
+  "properties": {
+    "file": { "type": "string" },
+    "license": { "type": "string" },
+    "author": { "type": "string" },
+    "source": { "type": "string" }
+  }
+}

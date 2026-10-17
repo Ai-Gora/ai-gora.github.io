@@ -1,0 +1,25 @@
+{
+  "name": "aigora",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Aigora: a free, open-source, permanent AI- and human-readable library. Static build, no server.",
+  "license": "MIT",
+  "type": "module",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "validate": "node scripts/build.js --check",
+    "build": "node scripts/build.js",
+    "test": "node --test",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "ajv": "^8.17.1",
+    "ajv-formats": "^3.0.1",
+    "js-yaml": "^4.1.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.17.0",
+    "eslint": "^9.17.0",
+    "globals": "^15.14.0"
+  }
+}

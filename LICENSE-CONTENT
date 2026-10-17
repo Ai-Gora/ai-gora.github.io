@@ -1,0 +1,14 @@
+Aigora content license
+======================
+
+All article text (articles/), quizzes (quizzes/) and topic files (topics/) are
+licensed under the Creative Commons Attribution-ShareAlike 4.0 International
+License (CC BY-SA 4.0), unless a file's frontmatter states otherwise.
+
+Full legal code: https://creativecommons.org/licenses/by-sa/4.0/legalcode
+
+Media files (media/) carry their own licence in a `.license.yaml` sidecar next
+to each file. Code (scripts/, schema/, workflows) is MIT, see LICENSE.
+
+Text adapted from Wikipedia must record the source URL and revision ID in the
+article's `derived_from` field, keep attribution and stay under CC BY-SA.

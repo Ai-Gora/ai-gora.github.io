@@ -1,0 +1,11 @@
+article: aig-000003
+questions:
+  - id: q1
+    type: single
+    prompt: Which town is the centre of the Metlika dialect?
+    options: [Metlika, Črnomelj, Semič]
+    answer: 0
+    explain: The Metlika dialect is named after and centred on Metlika.
+    ref: bela-krajina-dialects#metlika
+    difficulty: 1
+    tags: [dialects, geography]

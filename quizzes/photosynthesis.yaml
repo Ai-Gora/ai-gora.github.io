@@ -1,0 +1,11 @@
+article: aig-000001
+questions:
+  - id: q1
+    type: single
+    prompt: Which gas does photosynthesis release?
+    options: [Oxygen, Nitrogen, Carbon dioxide]
+    answer: 0
+    explain: Plants take in carbon dioxide and release oxygen.
+    ref: photosynthesis#inputs-outputs
+    difficulty: 1
+    tags: [biology]

@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Ai-Gora/aigora/schema/article.schema.json",
+  "title": "Aigora article frontmatter",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "title", "slug", "summary", "topics", "level", "lang", "status", "confidence", "updated", "review_after", "authors", "ai_assisted", "sources", "license"],
+  "properties": {
+    "id": { "type": "string", "pattern": "^aig-[0-9]{6}$", "description": "Stable ID, independent of title and slug." },
+    "title": { "type": "string", "minLength": 1 },
+    "slug": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$" },
+    "summary": { "type": "string", "minLength": 1, "description": "Three-line answer (decision layer)." },
+    "topics": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$" } },
+    "level": { "enum": ["intro", "core", "deep"] },
+    "lang": { "type": "string", "pattern": "^[a-z]{2,3}$" },
+    "translations": { "type": "object", "propertyNames": { "pattern": "^[a-z]{2,3}$" }, "additionalProperties": { "type": "string", "pattern": "^aig-[0-9]{6}$" } },
+    "status": { "enum": ["draft", "reviewed", "stale"] },
+    "confidence": { "enum": ["low", "medium", "high"] },
+    "updated": { "type": "string", "format": "date" },
+    "review_after": { "type": "string", "format": "date" },
+    "authors": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+    "ai_assisted": { "type": "boolean" },
+    "prerequisites": { "type": "array", "uniqueItems": true, "items": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$" } },
+    "sources": {
+      "type": "array", "minItems": 1,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["id", "title", "url", "accessed"],
+        "properties": {
+          "id": { "type": "integer", "minimum": 1 },
+          "title": { "type": "string", "minLength": 1 },
+          "url": { "type": "string", "format": "uri" },
+          "accessed": { "type": "string", "format": "date" },
+          "publisher": { "type": "string" }
+        }
+      }
+    },
+    "license": { "const": "CC-BY-SA-4.0" },
+    "derived_from": {
+      "type": "array",
+      "items": {
+        "type": "object", "additionalProperties": false, "required": ["url"],
+        "properties": { "url": { "type": "string", "format": "uri" }, "revision": { "type": ["string", "integer"] } }
+      }
+    }
+  }
+}

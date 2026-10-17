@@ -1,0 +1,5 @@
+id: science
+title: Science
+description: Natural sciences.
+parent: null
+related: [history]
