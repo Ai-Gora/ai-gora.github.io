@@ -1,0 +1,51 @@
+# Aigora word list (STYLE W8), English. Add a term the first time an article needs it.
+- term: first-level administrative division
+  meaning: The largest unit with its own administration directly below the national level (Aigora working definition).
+  use_instead_of: [first-order division, top-level region]
+  lang_pairs: {sl: enota prve ravni}
+  source: eu-administrative-divisions#answer
+- term: NUTS
+  meaning: Nomenclature of territorial units for statistics. The EU classification of regions in three levels, NUTS 1 to NUTS 3.
+  use_instead_of: [EU regions]
+  lang_pairs: {sl: NUTS (skupna statistična klasifikacija teritorialnih enot)}
+  source: https://ec.europa.eu/eurostat/web/nuts/overview
+- term: local administrative unit (LAU)
+  meaning: A municipality or commune on the Eurostat list below NUTS 3.
+  use_instead_of: [local unit]
+  lang_pairs: {sl: lokalna upravna enota (LAU)}
+  source: https://ec.europa.eu/eurostat/web/nuts/local-administrative-units
+- term: municipality
+  meaning: In Slovenia, the only level of local self-government (občina).
+  use_instead_of: [commune (for Slovenia)]
+  lang_pairs: {sl: občina}
+  source: https://www.gov.si/teme/lokalna-samouprava/
+- term: administrative unit (Slovenia)
+  meaning: A local office of the Slovenian state administration (upravna enota). Not a self-governing body.
+  use_instead_of: [administrative district]
+  lang_pairs: {sl: upravna enota}
+  source: https://www.gov.si/drzavni-organi/upravne-enote/
+- term: dialect
+  meaning: A regional form of a language, as drawn on the map of Slovene dialects.
+  use_instead_of: [idiom, vernacular]
+  lang_pairs: {sl: narečje}
+  source: https://www.fran.si/204/sla-slovenski-lingvisticni-atlas/datoteke/SLA_Karta-narecij.pdf
+- term: local dialect
+  meaning: The speech of one village or small area, below the level of a dialect.
+  use_instead_of: [subdialect (for govor)]
+  lang_pairs: {sl: govor}
+  source: https://repozitorij.uni-lj.si/Dokument.php?id=218853&lang=slv
+- term: Lower Carniolan dialect group
+  meaning: The Slovene dialect group that includes both Bela Krajina dialects.
+  use_instead_of: [Dolenjska group]
+  lang_pairs: {sl: dolenjska narečna skupina}
+  source: https://www.fran.si/204/sla-slovenski-lingvisticni-atlas/datoteke/SLA_Karta-narecij.pdf
+- term: coronal (frontal) plane
+  meaning: A vertical plane from side to side. It divides the body into front and back parts.
+  use_instead_of: [front plane]
+  lang_pairs: {sl: frontalna (koronalna) ravnina}
+  source: https://training.seer.cancer.gov/anatomy/body/terminology.html
+- term: transverse (axial) plane
+  meaning: A horizontal plane. It divides the body into upper and lower parts.
+  use_instead_of: [cross-section plane]
+  lang_pairs: {sl: prečna (transverzalna) ravnina}
+  source: https://training.seer.cancer.gov/anatomy/body/terminology.html

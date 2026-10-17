@@ -1,0 +1,92 @@
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v6.json",
+  "title": "First-level administrative units in EU-27 countries",
+  "description": "Bar chart, one bar per EU country, log scale. Counts range from 3 (Belgium, Portugal) to 615 (Cyprus).",
+  "width": 520,
+  "height": {
+    "step": 16
+  },
+  "data": {
+    "url": "data.csv",
+    "format": {
+      "type": "csv",
+      "parse": {
+        "count": "number"
+      }
+    }
+  },
+  "encoding": {
+    "y": {
+      "field": "country",
+      "type": "nominal",
+      "sort": "-x",
+      "title": "Country"
+    },
+    "x": {
+      "field": "count",
+      "type": "quantitative",
+      "scale": {
+        "type": "log",
+        "domain": [
+          1,
+          1000
+        ]
+      },
+      "title": "Number of units (log scale)",
+      "axis": {
+        "values": [
+          1,
+          3,
+          10,
+          30,
+          100,
+          300,
+          1000
+        ]
+      },
+      "stack": null
+    },
+    "tooltip": [
+      {
+        "field": "country",
+        "type": "nominal",
+        "title": "Country"
+      },
+      {
+        "field": "unit",
+        "type": "nominal"
+      },
+      {
+        "field": "count",
+        "type": "quantitative",
+        "title": "Number of units (log scale)"
+      }
+    ],
+    "x2": {
+      "datum": 1
+    }
+  },
+  "layer": [
+    {
+      "mark": {
+        "type": "bar",
+        "color": "#3b6ea5"
+      }
+    },
+    {
+      "mark": {
+        "type": "text",
+        "align": "left",
+        "dx": 3,
+        "fontSize": 10
+      },
+      "encoding": {
+        "text": {
+          "field": "count",
+          "type": "quantitative"
+        },
+        "x2": null
+      }
+    }
+  ]
+}

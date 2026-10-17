@@ -14,7 +14,7 @@ questions:
     prompt: Kateri kraj leži na območju severnobelokranjskega narečja?
     options: [Vinica, Metlika, Stari trg ob Kolpi, Dragatuš]
     answer: 1
-    explain: Severnobelokranjsko narečje se govori v okolici Semiča, Črnomlja in Metlike; drugi trije kraji so na jugu.
+    explain: Severnobelokranjsko narečje govorijo v okolici Semiča, Črnomlja in Metlike. Drugi trije kraji so na jugu.
     ref: belokranjska-narecja#north
     difficulty: 2
     tags: [narečja, zemljepis]
