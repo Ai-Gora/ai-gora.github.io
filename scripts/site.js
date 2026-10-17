@@ -221,7 +221,7 @@ ${quiz ? `<p><a class="button" href="../quiz/${fm.slug}.html">${L('takeQuiz', { 
 <p class="muted">ID <code>${esc(fm.id)}</code> · ${L('licence')} ${esc(fm.license)} · <a href="${fm.slug}.md">${L('markdownSource')}</a> · <a href="${fm.slug}.json">JSON</a> · <a href="https://github.com/Ai-Gora/ai-gora.github.io/commits/main/${esc(path.relative(ctx.root, a.file).split(path.sep).join('/'))}">${L('history')}</a></p>
 </footer>
 </article>`;
-  return page({ title: fm.title, base: '../', lang: fm.lang, scripts: a.body.includes('```mermaid') ? ['diagram.js'] : [], body: html, description: fm.summary.trim(), head: `${canonical}${altLinks}<script type="application/ld+json">\n${safeJson(jsonLd(a))}</script>\n` });
+  return page({ title: fm.title, base: '../', lang: fm.lang, scripts: html.includes('data-mermaid') ? ['diagram.js'] : [], body: html, description: fm.summary.trim(), head: `${canonical}${altLinks}<script type="application/ld+json">\n${safeJson(jsonLd(a))}</script>\n` });
 }
 
 function questionHtml(q, slug, ctx, lang = 'en') {

@@ -263,3 +263,15 @@ test('SL article and path chrome; English pages unchanged; English topic text ma
   assert.match(site['paths/sl/linguistics.html'], /<h2>Vrstni red branja<\/h2>/);
   assert.match(site['paths/en/index.html'], /<html lang="en">[\s\S]*<h1>Lesson paths \(English\)<\/h1>/);
 });
+
+test('diagram.js is chosen from the rendered HTML, so a fence written "``` mermaid" still loads it', () => {
+  const c = loadContent(REPO).content;
+  const a = c.bySlug.get('photosynthesis');
+  const extra = '\n\n``` mermaid\nflowchart LR\n  accTitle: T\n  accDescr: D.\n  A --> B\n```\n';
+  a.body += extra;
+  a.sections.find((x) => x.anchor && x.anchor !== 'sources').text += extra; // Sources is rendered from frontmatter
+  const s2 = buildSite(c, buildOutputs(c));
+  assert.match(s2['a/photosynthesis.html'], /data-mermaid/);
+  assert.match(s2['a/photosynthesis.html'], /assets\/diagram\.js/);
+  assert.ok(!site['a/photosynthesis.html'].includes('diagram.js'));
+});

@@ -1,5 +1,7 @@
 // Renders Mermaid diagrams with the self-hosted build (assets/vendor/mermaid.min.js). Loaded only on pages with a diagram.
 // Without JS (or if rendering fails) the page keeps the source block and the accTitle/accDescr caption.
+import { mermaidProblems, MERMAID_SECURE } from './mermaid-guard.js';
+
 const blocks = [...document.querySelectorAll('pre[data-mermaid]')];
 
 const loadMermaid = () => new Promise((resolve, reject) => {
@@ -14,9 +16,11 @@ if (blocks.length) {
   try {
     const mermaid = await loadMermaid();
     const dark = window.matchMedia?.('(prefers-color-scheme: dark)').matches;
-    mermaid.initialize({ startOnLoad: false, securityLevel: 'strict', theme: dark ? 'dark' : 'default' });
+    mermaid.initialize({ startOnLoad: false, securityLevel: 'strict', secure: MERMAID_SECURE, theme: dark ? 'dark' : 'default' });
     let n = 0;
     for (const pre of blocks) {
+      const problems = mermaidProblems(pre.textContent);
+      if (problems.length) { console.warn('diagram not rendered:', problems.join('; ')); continue; } // the build rejects these too; keep the source visible
       try {
         // accTitle/accDescr in the source become the SVG <title>/<desc> (aria-labelledby/-describedby).
         const { svg } = await mermaid.render(`aigora-diagram-${++n}`, pre.textContent);
