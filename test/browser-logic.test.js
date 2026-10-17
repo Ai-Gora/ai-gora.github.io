@@ -131,6 +131,16 @@ test('search: exact word ranks above prefix-only', () => {
   assert.deepEqual(search(index, 'cat').map((e) => e.slug), ['exact', 'prefix']);
 });
 
+test('search: opts.lang keeps only matching entries; empty or missing lang keeps all', () => {
+  const index = prepareIndex([
+    entry('en', { title: 'A study', lang: 'en' }),
+    entry('sl', { title: 'A study', lang: 'sl' }),
+  ]);
+  assert.deepEqual(search(index, 'study', { lang: 'sl' }).map((e) => e.slug), ['sl']);
+  assert.equal(search(index, 'study', {}).length, 2);
+  assert.equal(search(index, 'study', { lang: '' }).length, 2);
+});
+
 test('search: prepareIndex gives same result as raw entries', () => {
   const raw = [
     entry('a', { title: 'Photosynthesis', heading: 'Chloroplasts', text: 'green plants', topics: ['biology'] }),

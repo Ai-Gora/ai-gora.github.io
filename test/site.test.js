@@ -161,6 +161,14 @@ test('search page has a no-JS browse fallback and a labelled search field', asyn
   assert.match(html, /id="browse"[\s\S]*a\/photosynthesis\.html#chloroplasts/);
 });
 
+test('search page has a language filter and browse grouped by language', () => {
+  const html = site['search.html'];
+  assert.ok(html.includes('<label for="search-lang">Language</label>'), 'search has a language label');
+  assert.ok(html.includes('<option value="sl">Slovenščina</option>'), 'search offers the sl option');
+  assert.ok(html.includes('<h3 lang="sl">Slovenščina</h3>'), 'browse groups by language');
+  assert.ok(site['index.html'].includes('lang="sl"'), 'home lists articles with their language');
+});
+
 test('buildSite throws instead of overwriting a page (topic id "index" bypassing validation)', () => {
   const rename = (json) => JSON.stringify(JSON.parse(json), (k, v) => (v === 'linguistics' ? 'index' : v));
   const forged = { ...data, 'data/topics.json': rename(data['data/topics.json']), 'data/graph.json': rename(data['data/graph.json']) };

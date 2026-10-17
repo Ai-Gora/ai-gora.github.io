@@ -15,11 +15,13 @@ export function prepareIndex(index) {
   return index.map((e) => ({ ...e, fields: fieldsOf(e) }));
 }
 
-export function search(prepared, query) {
+export function search(prepared, query, opts = {}) {
   const qs = tokens(query);
   if (!qs.length) return [];
+  const lang = typeof opts.lang === 'string' ? opts.lang : '';
   const hits = [];
   for (const e of prepared) {
+    if (lang && e.lang !== lang) continue;
     const fields = e.fields || fieldsOf(e);
     let score = 0;
     let all = true;

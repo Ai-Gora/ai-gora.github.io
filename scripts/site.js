@@ -234,7 +234,7 @@ export function buildSite(content, data) {
   for (const a of sorted) out[`a/${a.fm.slug}.html`] = articlePage(a, ctx);
   for (const q of content.quizzes) out[`quiz/${q.slug}.html`] = quizPage(q, ctx);
 
-  const articleItem = (a, base) => `<li><a href="${base}a/${a.fm.slug}.html">${esc(a.fm.title)}</a> <span class="muted">· ${esc(levelLabel(a.fm.level))}</span><br><span class="desc">${esc(a.fm.summary.trim().split('\n')[0])}</span></li>`;
+  const articleItem = (a, base) => `<li><a href="${base}a/${a.fm.slug}.html" lang="${esc(a.fm.lang)}">${esc(a.fm.title)}</a> <span class="muted">· ${esc(levelLabel(a.fm.level))} · ${esc(langName(a.fm.lang))}</span><br><span class="desc" lang="${esc(a.fm.lang)}">${esc(a.fm.summary.trim().split('\n')[0])}</span></li>`;
   const usedTopics = topicsData.filter((t) => lessonPath(graph, topicsData, [t.id]).length);
 
   out['index.html'] = page({ title: SITE_NAME, base: '', current: 'index.html', description: 'A free, open-source, permanent library readable by humans and machines.', body: `<h1>${SITE_NAME}</h1>
@@ -249,6 +249,7 @@ export function buildSite(content, data) {
 <form id="search" role="search" aria-label="Article search" action="search.html" method="get">
 <label for="q">Search articles and sections</label>
 <div class="row"><input id="q" name="q" type="search" autocomplete="off" aria-describedby="search-help"><button type="submit">Search</button></div>
+<p><label for="search-lang">Language</label> <select id="search-lang" name="lang"><option value="">All languages</option>${langs.map((c) => `<option value="${esc(c)}">${esc(langName(c))}</option>`).join('')}</select></p>
 <p id="search-help" class="muted">Matches titles, section headings and text.</p>
 </form>
 <p id="search-status" class="status" role="status" aria-live="polite"></p>
@@ -256,7 +257,8 @@ export function buildSite(content, data) {
 <noscript><p class="notice">Search needs JavaScript. Browse every article and section below instead.</p></noscript>
 <section id="browse" aria-labelledby="browse-h">
 <h2 id="browse-h">Browse all articles</h2>
-<ul class="list">${sorted.map((a) => `<li><a href="a/${a.fm.slug}.html">${esc(a.fm.title)}</a><ul>${a.sections.filter((s) => s.level === 2 && s.anchor && !['key-claims', 'sources'].includes(s.anchor)).map((s) => `<li><a href="a/${a.fm.slug}.html#${s.anchor}">${esc(s.heading)}</a></li>`).join('')}</ul></li>`).join('')}</ul>
+${langs.map((code) => `<h3 lang="${esc(code)}">${esc(langName(code))}</h3>
+<ul class="list">${sorted.filter((a) => a.fm.lang === code).map((a) => `<li lang="${esc(code)}"><a href="a/${a.fm.slug}.html">${esc(a.fm.title)}</a><ul>${a.sections.filter((s) => s.level === 2 && s.anchor && !['key-claims', 'sources'].includes(s.anchor)).map((s) => `<li><a href="a/${a.fm.slug}.html#${s.anchor}">${esc(s.heading)}</a></li>`).join('')}</ul></li>`).join('')}</ul>`).join('\n')}
 </section>` });
 
   out['quiz/index.html'] = page({ title: 'Quizzes', base: '../', current: 'quiz/index.html', scripts: ['paths.js'], body: `<h1>Quizzes</h1>
