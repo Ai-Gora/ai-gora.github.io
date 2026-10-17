@@ -9,7 +9,7 @@ import addFormats from 'ajv-formats';
 
 const SCHEMA_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'schema');
 export const SITE_NAME = 'Aigora';
-export const SITE_URL = 'https://ai-gora.github.io/aigora';
+export const SITE_URL = 'https://ai-gora.github.io';
 
 const loadYaml = (text) => yaml.load(text, { schema: yaml.JSON_SCHEMA });
 
@@ -77,6 +77,7 @@ export function loadContent(root) {
   for (const f of walk(path.join(root, 'topics'), '.yaml')) {
     let t;
     try { t = loadYaml(fs.readFileSync(f, 'utf8')); } catch (e) { err(f, `YAML parse error: ${e.reason || e.message}`); continue; }
+    if (t?.id === 'index') { err(f, "topic id 'index' is reserved"); continue; }
     if (!v.topic(t)) { fmtAjv(v.topic.errors).forEach((m) => err(f, `topic schema: ${m}`)); continue; }
     if (path.basename(f, '.yaml') !== t.id) err(f, `topic id '${t.id}' must match file name`);
     topics.set(t.id, { ...t, file: f });
@@ -95,6 +96,7 @@ export function loadContent(root) {
     if (!parts) { err(f, 'missing YAML frontmatter (file must start with ---)'); continue; }
     let fm;
     try { fm = loadYaml(parts.fm); } catch (e) { err(f, `frontmatter YAML parse error: ${e.reason || e.message}`); continue; }
+    if (fm?.slug === 'index') { err(f, "slug 'index' is reserved"); continue; }
     if (!v.article(fm)) { fmtAjv(v.article.errors).forEach((m) => err(f, `frontmatter schema: ${m}`)); continue; }
     if (path.basename(f, '.md') !== fm.slug) err(f, `slug '${fm.slug}' must match file name`);
     if (bySlug.has(fm.slug)) err(f, `duplicate slug '${fm.slug}'`);
@@ -134,7 +136,8 @@ export function loadContent(root) {
     for (const id of ids) if (!cited.has(id)) err(a.file, `source ${id} is never cited in the body`);
     const kc = a.sections.find((s) => s.anchor === 'key-claims');
     if (!kc) err(a.file, "missing '## Key claims {#key-claims}' section");
-    else {
+    if (!a.sections.some((s) => s.anchor === 'sources')) err(a.file, "missing '## Sources {#sources}' section");
+    if (kc) {
       const bullets = kc.text.split(/\r?\n/).filter((l) => /^\s*[-*]\s+/.test(l));
       if (!bullets.length) err(a.file, 'Key claims section has no bullet claims');
       for (const b of bullets) if (!extractCitations(b).length) err(a.file, `Key claims bullet has no citation: "${b.replace(/^\s*[-*]\s+/, '').trim()}"`);
@@ -164,6 +167,7 @@ export function loadContent(root) {
       if (qu.type === 'single' && !(Number.isInteger(qu.answer) && qu.answer >= 0 && qu.answer < (qu.options || []).length)) err(f, `${qu.id}: answer must be an option index`);
       if (qu.type === 'true_false' && typeof qu.answer !== 'boolean') err(f, `${qu.id}: true_false answer must be true or false`);
       if (qu.type === 'multi' && !(Array.isArray(qu.answer) && qu.answer.every((i) => Number.isInteger(i) && i >= 0 && i < (qu.options || []).length))) err(f, `${qu.id}: multi answer must be a list of option indexes`);
+      if (qu.type === 'multi' && Array.isArray(qu.answer) && new Set(qu.answer).size !== qu.answer.length) err(f, `${qu.id}: multi answer indexes must be unique`);
     }
     quizzes.push({ ...q, slug: a.fm.slug, file: f });
   }
@@ -270,6 +274,18 @@ export function buildOutputs(content) {
   put('llms.txt', lines.join('\n'));
   put('llms-full.txt', sorted.map((a) => `<!-- ${a.fm.id} ${a.fm.slug} -->\n${a.raw.trim()}\n`).join('\n'));
   put('data/manifest.json', { name: SITE_NAME, version: 1, articles: sorted.length, quizzes: quizzes.length, topics: topics.size, files: Object.keys(out).sort() });
+  return out;
+}
+
+/** Merge maps of { relativePath: string } into one new object, rejecting duplicate paths. */
+export function mergeOutputs(...maps) {
+  const out = {};
+  for (const map of maps) {
+    for (const [rel, value] of Object.entries(map)) {
+      if (Object.prototype.hasOwnProperty.call(out, rel)) throw new Error(`duplicate output path: ${rel}`);
+      out[rel] = value;
+    }
+  }
   return out;
 }
 
