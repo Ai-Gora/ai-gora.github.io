@@ -14,3 +14,4 @@ One line per mistake hit while building Aigora, so it is not repeated.
 - OpenCode can exit or time out without writing files (glm and deepseek, twice each on the style task); check `git status` right after each run, not the agent's summary.
 - A fixture test that only asserts "no errors" passes vacuously if its `replace()` misses; assert the edit changed the file.
 - Path checks with `path.resolve` + `path.relative` miss symlinks: a committed `data.csv -> /etc/...` passes; use `lstat` to refuse links and compare `realpathSync` results, in both the pre-check and the loader.
+- A URL sanitizer without negative tests (javascript:, data:, //, remote images) silently became a pass-through; every sanitizer fix needs hostile-input tests that assert the final output, plus a mutation check that the guard fails when the sanitizer is removed.

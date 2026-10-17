@@ -38,6 +38,28 @@ export function safeDataPath(dir, uri) {
   return p;
 }
 
+/**
+ * URL allowed into chart.svg, or '' (dropped). Images: a relative path to a regular, non-symlink file inside the
+ * chart folder. Links: the same, or an absolute https: URL. Everything else is refused: javascript:, data:, http:,
+ * file:, protocol-relative //, backslashes, whitespace/control characters, remote images, unknown contexts.
+ */
+export function sanitizeChartUrl(dir, uri, context) {
+  if (typeof uri !== 'string' || !uri || uri.length > 2048) return '';
+  if (context !== 'href' && context !== 'image') return '';
+  // Browsers ignore tabs/newlines inside schemes ("java\tscript:"); refuse any whitespace, control chars or backslashes.
+  // eslint-disable-next-line no-control-regex -- deliberately matching control characters
+  if (/[\u0000-\u0020\u007f-\u009f\\]/.test(uri)) return '';
+  if (uri.startsWith('//')) return '';
+  if (/^[a-z][a-z0-9+.-]*:/i.test(uri)) {
+    if (context !== 'href') return '';
+    let u;
+    try { u = new URL(uri); } catch { return ''; }
+    return u.protocol === 'https:' && u.hostname && !u.username && !u.password ? u.href : '';
+  }
+  try { safeDataPath(dir, uri); } catch { return ''; }
+  return uri;
+}
+
 /** Render one chart dir to an SVG string. SVG output keeps urls relative; absolute paths are only used to read data. */
 export async function renderChart(dir) {
   const spec = JSON.parse(fs.readFileSync(path.join(dir, 'chart.vl.json'), 'utf8'));
@@ -47,7 +69,8 @@ export async function renderChart(dir) {
   for (const u of urls) safeDataPath(dir, u);
   const loader = {
     // Used by Vega for data loading and for image/href attributes written into the SVG.
-    sanitize: async (uri) => ({ href: typeof uri === 'string' ? uri : '' }),
+    // Called by Vega for links (context 'href') and images (context 'image'); its href goes into the SVG.
+    sanitize: async (uri, options) => ({ href: sanitizeChartUrl(dir, uri, options?.context) }),
     load: async (uri) => fs.readFileSync(safeDataPath(dir, uri), 'utf8'),
     file: async (p) => fs.readFileSync(safeDataPath(dir, p), 'utf8'),
     http: async (uri) => { throw new Error(`chart data url '${uri}': network access is not allowed`); },

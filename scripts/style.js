@@ -30,14 +30,49 @@ function walk(dir) {
   }).sort();
 }
 
+/** Data urls a Vega-Lite spec loads: every `data: { url }` (top level, layers, lookups). */
+export function specDataUrls(spec) {
+  const urls = [];
+  (function find(o) {
+    if (!o || typeof o !== 'object') return;
+    for (const [k, v] of Object.entries(o)) {
+      if (k === 'data' && v && typeof v === 'object' && typeof v.url === 'string') urls.push(v.url);
+      find(v);
+    }
+  })(spec);
+  return urls;
+}
+
+/**
+ * Chart folders are credited in their README.md (STYLE V3), but only these files are exempt from sidecars:
+ * chart.vl.json, chart.svg, README.md and the in-folder data files the spec references. Anything else (a photo) needs one.
+ */
+function chartExemptFiles(files) {
+  const exempt = new Set();
+  for (const spec of files.filter((f) => path.basename(f) === 'chart.vl.json')) {
+    const dir = path.dirname(spec);
+    for (const n of ['chart.vl.json', 'chart.svg', 'README.md']) exempt.add(path.join(dir, n));
+    let urls = [];
+    try { urls = specDataUrls(JSON.parse(fs.readFileSync(spec, 'utf8'))); } catch { /* invalid spec: reported by the chart build */ }
+    for (const u of urls) {
+      if (/^[a-z][a-z0-9+.-]*:/i.test(u) || u.startsWith('/') || u.startsWith('\\')) continue;
+      const p = path.resolve(dir, u);
+      const r = path.relative(dir, p);
+      if (r && !r.startsWith('..') && !path.isAbsolute(r)) exempt.add(p);
+    }
+  }
+  return exempt;
+}
+
 export function checkMediaDir(root) {
   const errs = [];
   const rel = (p) => path.relative(root, p).split(path.sep).join('/');
-  for (const f of walk(path.join(root, 'media'))) {
+  const files = walk(path.join(root, 'media'));
+  const exempt = chartExemptFiles(files);
+  for (const f of files) {
     const name = path.basename(f);
     if (name.endsWith('.license.yaml') || name === '.gitkeep') continue;
-    // Chart folders (data, spec, generated SVG, README) are credited in their README.md (STYLE V3).
-    if (fs.existsSync(path.join(path.dirname(f), 'chart.vl.json'))) continue;
+    if (exempt.has(f)) continue;
     const side = `${f}.license.yaml`;
     const kind = IMAGE_EXT.includes(path.extname(f).toLowerCase()) ? 'image' : 'media file';
     if (!fs.existsSync(side)) { errs.push(`${rel(f)}: ${kind} has no licence sidecar ${path.basename(side)}`); continue; }

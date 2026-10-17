@@ -1,4 +1,4 @@
-import { test } from 'node:test';
+import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -6,7 +6,19 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { checkLicense, checkMediaDir, checkAccessibility, sentenceWarnings } from '../scripts/style.js';
-import { buildCharts, renderChart, safeDataPath } from '../scripts/charts.js';
+import { buildCharts as buildChartsRaw, renderChart as renderChartRaw, safeDataPath, sanitizeChartUrl } from '../scripts/charts.js';
+
+// Regression guard: every SVG produced by any test in this file is checked for "javascript:" once all tests finish.
+// aria-label attributes are excluded: Vega-Lite echoes data values (including the hostile ones fed in below) there as inert, escaped text.
+const SVGS = [];
+const renderChart = async (dir) => { const svg = await renderChartRaw(dir); SVGS.push(svg); return svg; };
+const buildCharts = async (...a) => { const res = await buildChartsRaw(...a); SVGS.push(...Object.values(res.outputs)); return res; };
+const scriptable = (svg) => /javascript:/i.test(svg.replace(/aria-label="[^"]*"/g, ''));
+after(() => {
+  assert.ok(SVGS.length >= 8, `guard saw only ${SVGS.length} SVGs`);
+  const bad = SVGS.filter(scriptable);
+  assert.equal(bad.length, 0, `javascript: found in ${bad.length} generated SVG(s)`);
+});
 import { loadContent } from '../scripts/lib.js';
 
 const REPO = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -45,7 +57,7 @@ test('checkMediaDir: missing sidecar, good sidecar, bad licence, generated chart
   assert.match(checkMediaDir(r).join(), /a\.png\.license\.yaml: licence CC-BY-NC-4.0 is not allowed/);
   write(r, 'media/leaf/a.png.license.yaml', SIDE('CC0-1.0'));
   write(r, 'media/leaf/c/chart.svg', '<svg/>');
-  write(r, 'media/leaf/c/chart.vl.json', '{}');
+  write(r, 'media/leaf/c/chart.vl.json', JSON.stringify({ data: { url: 'data.csv' } }));
   write(r, 'media/leaf/c/data.csv', 'a\n1\n');
   assert.deepEqual(checkMediaDir(r), []);
   write(r, 'media/leaf/other.svg', '<svg/>');
@@ -122,7 +134,7 @@ test('every non-chart media file needs a sidecar, not only images', () => {
   write(r, 'media/leaf/notes.pdf.license.yaml', SIDE('CC-BY-4.0'));
   write(r, 'media/leaf/clip.mp4.license.yaml', SIDE('CC-BY-ND-4.0'));
   assert.deepEqual(checkMediaDir(r).length, 1);
-  write(r, 'media/leaf/c/chart.vl.json', '{}');
+  write(r, 'media/leaf/c/chart.vl.json', JSON.stringify({ data: { url: 'data.csv' } }));
   write(r, 'media/leaf/c/data.csv', 'a\n1\n');
   write(r, 'media/leaf/c/README.md', 'x');
   assert.equal(checkMediaDir(r).length, 1);
@@ -170,6 +182,7 @@ test('symlinked data files and symlinked folders are refused (check and load)', 
 
 test('SVG hrefs stay relative (no absolute build paths)', async () => {
   const { dir } = chartDir({ data: { values: [{ a: 1 }] }, mark: { type: 'image', width: 10, height: 10 }, encoding: { url: { value: 'pic.png' }, x: { field: 'a', type: 'quantitative' } } });
+  write(dir, 'pic.png', 'PNG');
   const svg = await renderChart(dir);
   assert.match(svg, /href="pic\.png"/);
   assert.ok(!svg.includes(os.tmpdir()) && !svg.includes(dir));
@@ -186,4 +199,94 @@ test('render errors are reported, not thrown uncaught', async () => {
   const { r } = chartDir({ mark: 'nonsense-mark', data: { values: [] } });
   const res = await buildCharts(r);
   assert.match(res.errors.join(), /chart render failed/);
+});
+
+const linkChart = (rows) => {
+  const { r, dir } = chartDir({ data: { url: 'links.csv' }, mark: 'point', encoding: { x: { field: 'x', type: 'quantitative' }, href: { field: 'u' } } });
+  write(dir, 'links.csv', `x,u\n${rows.map((u, i) => `${i},"${u.replace(/"/g, '""')}"`).join('\n')}\n`);
+  return { r, dir };
+};
+const hrefs = (svg) => [...svg.matchAll(/xlink:href="([^"]*)"/g)].map((m) => m[1]);
+
+test('chart links: javascript:, data:, http:, file:, protocol-relative and obfuscated URLs are dropped', async () => {
+  const hostile = ['javascript:alert(1)', 'JaVaScRiPt:alert(1)', ' javascript:alert(1)', 'java\tscript:alert(1)', 'data:text/html;base64,PHNjcmlwdD4=', 'http://example.org/', 'file:///etc/passwd', '//evil.example/x', '\\\\evil.example\\x', 'vbscript:msgbox', 'https://user:pw@example.org/', 'missing.html', '../../outside.html'];
+  const { dir } = linkChart(hostile);
+  const svg = await renderChart(dir);
+  const h = hrefs(svg);
+  assert.equal(h.length, hostile.length);
+  assert.ok(h.every((x) => x === ''), h.join(' | '));
+  assert.ok(!scriptable(svg));
+  assert.ok(!/evil\.example|example\.org|file:|data:text/.test(svg.replace(/aria-label="[^"]*"/g, '')));
+});
+
+test('chart links: https URLs and relative in-folder files are kept', async () => {
+  const { dir } = linkChart(['https://example.org/a?b=1', 'data.csv']);
+  const svg = await renderChart(dir);
+  assert.deepEqual(hrefs(svg), ['https://example.org/a?b=1', 'data.csv']);
+});
+
+test('chart images: only relative, real, non-symlink in-folder files load', async () => {
+  const img = (u) => ({ data: { values: [{ a: 1 }] }, mark: { type: 'image', width: 10, height: 10 }, encoding: { url: { value: u }, x: { field: 'a', type: 'quantitative' } } });
+  const imageHref = async (u, setup = () => {}) => {
+    const { dir } = chartDir(img(u));
+    write(dir, 'pic.png', 'PNG');
+    setup(dir);
+    const svg = await renderChart(dir);
+    return /<image[^>]*xlink:href="([^"]*)"/.exec(svg)[1];
+  };
+  assert.equal(await imageHref('pic.png'), 'pic.png');
+  assert.equal(await imageHref('https://evil.example/p.png'), '');
+  assert.equal(await imageHref('//evil.example/p.png'), '');
+  assert.equal(await imageHref('data:image/png;base64,AAAA'), '');
+  assert.equal(await imageHref('javascript:alert(1)'), '');
+  assert.equal(await imageHref('missing.png'), '');
+  assert.equal(await imageHref('link.png', (dir) => fs.symlinkSync(path.join(dir, 'pic.png'), path.join(dir, 'link.png'))), '');
+});
+
+test('sanitizeChartUrl unit cases', () => {
+  const { dir } = chartDir(SPEC);
+  write(dir, 'pic.png', 'PNG');
+  assert.equal(sanitizeChartUrl(dir, 'https://example.org/', 'href'), 'https://example.org/');
+  assert.equal(sanitizeChartUrl(dir, 'https://example.org/', 'image'), '');
+  assert.equal(sanitizeChartUrl(dir, 'pic.png', 'image'), 'pic.png');
+  assert.equal(sanitizeChartUrl(dir, 'pic.png', undefined), '');
+  for (const bad of ['javascript:alert(1)', 'data:,x', 'http://example.org/', '//example.org/', 'file:///etc/passwd', 'https:\n//x', '\u0000javascript:x', '/etc/hostname', '']) {
+    assert.equal(sanitizeChartUrl(dir, bad, 'href'), '', JSON.stringify(bad));
+  }
+});
+
+test('chart folder: unlicensed photo fails; spec, svg, README and referenced data are exempt', () => {
+  const r = tmp();
+  write(r, 'media/demo/c/chart.vl.json', JSON.stringify({ ...SPEC, data: { url: 'data.csv' }, layer: [{ data: { url: 'sub/extra.json' }, mark: 'line' }] }));
+  write(r, 'media/demo/c/chart.svg', '<svg/>');
+  write(r, 'media/demo/c/README.md', 'x');
+  write(r, 'media/demo/c/data.csv', 'year,n\n2020,1\n');
+  write(r, 'media/demo/c/sub/extra.json', '[]');
+  assert.deepEqual(checkMediaDir(r), []);
+  write(r, 'media/demo/c/photo.jpg', 'x');
+  write(r, 'media/demo/c/unused.csv', 'a\n1\n');
+  write(r, 'media/demo/c/sub/pic.png', 'x');
+  const e = checkMediaDir(r);
+  assert.deepEqual(e.sort(), [
+    'media/demo/c/photo.jpg: image has no licence sidecar photo.jpg.license.yaml',
+    'media/demo/c/sub/pic.png: image has no licence sidecar pic.png.license.yaml',
+    'media/demo/c/unused.csv: media file has no licence sidecar unused.csv.license.yaml',
+  ]);
+  write(r, 'media/demo/c/photo.jpg.license.yaml', SIDE('CC-BY-SA-4.0'));
+  write(r, 'media/demo/c/unused.csv.license.yaml', SIDE('CC0-1.0'));
+  write(r, 'media/demo/c/sub/pic.png.license.yaml', SIDE('CC-BY-NC-4.0'));
+  assert.deepEqual(checkMediaDir(r), ['media/demo/c/sub/pic.png.license.yaml: licence CC-BY-NC-4.0 is not allowed (NC/ND licences are blocked, STYLE L2)']);
+});
+
+test('chart folder: image referenced only by an image mark (not data) still needs a sidecar', () => {
+  const r = tmp();
+  write(r, 'media/demo/c/chart.vl.json', JSON.stringify({ data: { values: [{ a: 1 }] }, mark: { type: 'image' }, encoding: { url: { value: 'pic.png' } } }));
+  write(r, 'media/demo/c/pic.png', 'x');
+  write(r, 'media/demo/c/README.md', 'x');
+  assert.match(checkMediaDir(r).join(), /pic\.png: image has no licence sidecar/);
+});
+
+test('guard detector catches javascript: outside aria-label', () => {
+  assert.ok(scriptable('<a xlink:href="javascript:alert(1)">'));
+  assert.ok(!scriptable('<path aria-label="u: javascript:alert(1)"/>'));
 });
