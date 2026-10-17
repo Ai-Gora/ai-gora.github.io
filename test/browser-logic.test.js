@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { isCorrect } from '../web/assets/quiz-check.js';
+import { isCorrect, questionState } from '../web/assets/quiz-check.js';
 import { search, prepareIndex, snippet } from '../web/assets/search-core.js';
 
 test('isCorrect single: right index, wrong index, two values', () => {
@@ -38,6 +38,33 @@ test('isCorrect fill: accent and case insensitive; wrong and empty fail', () => 
   assert.equal(isCorrect(q, ['']), false);
 });
 
+test('questionState: correct single is ok, closed, correct text', () => {
+  const q = { type: 'single', answer: 1 };
+  assert.deepEqual(questionState(q, ['1']), { ok: true, cls: 'ok', open: false, text: '✓ Correct.' });
+});
+
+test('questionState: wrong answer is bad and open', () => {
+  const st = questionState({ type: 'single', answer: 1 }, ['0']);
+  assert.equal(st.ok, false);
+  assert.equal(st.cls, 'bad');
+  assert.equal(st.open, true);
+  assert.ok(st.text.startsWith('✗ Not quite'));
+});
+
+test('questionState: unanswered is bad and open', () => {
+  const st = questionState({ type: 'single', answer: 1 }, []);
+  assert.equal(st.ok, false);
+  assert.equal(st.cls, 'bad');
+  assert.equal(st.open, true);
+  assert.ok(st.text.startsWith('✗ Not answered'));
+});
+
+test('questionState: fresh state, no memory between calls', () => {
+  const q = { type: 'single', answer: 1 };
+  assert.equal(questionState(q, ['0']).open, true);
+  assert.equal(questionState(q, ['1']).open, false);
+});
+
 const entry = (slug, extra) => ({ slug, title: '', heading: '', text: '', topics: [], ...extra });
 
 test('search: empty query returns []', () => {
@@ -60,6 +87,32 @@ test('search: prefix match works', () => {
 test('search: accent-insensitive (crnomelj matches Črnomelj)', () => {
   const index = prepareIndex([entry('a', { title: 'Črnomelj' })]);
   assert.deepEqual(search(index, 'crnomelj').map((e) => e.slug), ['a']);
+});
+
+test('search: AI matches ai_assisted true and not ai_assisted false', () => {
+  const index = prepareIndex([
+    entry('assisted', { title: 'A study', text: 'no acronym here', ai_assisted: true }),
+    entry('manual', { title: 'Another study', text: 'no acronym here', ai_assisted: false }),
+  ]);
+  assert.deepEqual(search(index, 'AI').map((e) => e.slug), ['assisted']);
+});
+
+test('search: authors are searchable (grokarmy)', () => {
+  const index = prepareIndex([entry('a', { title: 'Unrelated', authors: ['GrokArmy'] })]);
+  assert.deepEqual(search(index, 'grokarmy').map((e) => e.slug), ['a']);
+});
+
+test('search: short 2-character terms match (eu in title)', () => {
+  const index = prepareIndex([entry('a', { title: 'EU divisions' })]);
+  assert.deepEqual(search(index, 'eu').map((e) => e.slug), ['a']);
+});
+
+test('search: text hit ranks above metadata-only hit', () => {
+  const index = prepareIndex([
+    entry('meta', { title: 'Author index', authors: ['EU'] }),
+    entry('text', { title: 'Treaty', text: 'the eu was founded' }),
+  ]);
+  assert.deepEqual(search(index, 'eu').map((e) => e.slug), ['text', 'meta']);
 });
 
 test('search: title hit ranks above text-only hit', () => {

@@ -101,6 +101,16 @@ test('build outputs follow the data contract', () => {
   assert.match(out['llms.txt'], /## Optional/);
 });
 
+test('search-index entries expose authors and ai_assisted metadata', () => {
+  const { content } = fixture();
+  const index = JSON.parse(buildOutputs(content)['data/search-index.json']);
+  assert.ok(index.length > 0);
+  for (const e of index) {
+    assert.ok(Array.isArray(e.authors), `authors must be an array for ${e.id}`);
+    assert.equal(typeof e.ai_assisted, 'boolean', `ai_assisted must be a boolean for ${e.id}`);
+  }
+});
+
 test('one uncited Key claims bullet fails even if another is cited', () => {
   const { errors } = fixture((d) => edit(d, PHOTO, (t) => t.replace('- It happens in chloroplasts in plants.[^2]', '- It happens in chloroplasts in plants.')));
   hasError(errors, /Key claims bullet has no citation: "It happens in chloroplasts in plants."/);

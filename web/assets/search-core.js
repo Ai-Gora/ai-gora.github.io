@@ -1,7 +1,15 @@
 export const norm = (s) => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 export const tokens = (s) => norm(s).split(/[^a-z0-9]+/).filter(Boolean);
 
-const fieldsOf = (e) => [[tokens(e.title), 3], [tokens(e.heading), 2], [tokens(e.text), 1], [e.topics.flatMap(tokens), 1]];
+// tokens() keeps every non-empty run of [a-z0-9], so there is no minimum token
+// length: 2-character terms such as 'ai' and 'eu' are indexed and match.
+const fieldsOf = (e) => [
+  [tokens(e.title), 3],
+  [tokens(e.heading), 2],
+  [tokens(e.text), 1],
+  [e.topics.flatMap(tokens), 1],
+  [[...tokens((e.authors || []).join(' ')), ...(e.ai_assisted === true ? ['ai', 'assisted'] : [])], 0.5], // metadata ranks below any content hit
+];
 
 export function prepareIndex(index) {
   return index.map((e) => ({ ...e, fields: fieldsOf(e) }));
