@@ -105,3 +105,8 @@ details summary { cursor: pointer; color: var(--link); }
   a { color: inherit; }
 }
 @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+.table-wrap { overflow-x: auto; margin: 1rem 0; }
+.table-wrap table { border-collapse: collapse; font-size: 0.95em; }
+.table-wrap th, .table-wrap td { border: 1px solid #ccc; padding: 0.3rem 0.5rem; text-align: left; vertical-align: top; }
+main img { max-width: 100%; height: auto; }
+pre.mermaid { white-space: pre-wrap; }

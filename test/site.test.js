@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { loadContent, buildOutputs, SITE_URL } from '../scripts/lib.js';
-import { buildSite, renderInline, esc } from '../scripts/site.js';
+import { buildSite, renderInline, renderBlocks, esc } from '../scripts/site.js';
 import { lessonPath, expandTopics, pathLanguages } from '../web/assets/lesson-path.js';
 
 const REPO = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -175,4 +175,18 @@ test('buildSite throws instead of overwriting a page (topic id "index" bypassing
   const rename = (json) => JSON.stringify(JSON.parse(json), (k, v) => (v === 'linguistics' ? 'index' : v));
   const forged = { ...data, 'data/topics.json': rename(data['data/topics.json']), 'data/graph.json': rename(data['data/graph.json']) };
   assert.throws(() => buildSite(content, forged), /duplicate output path: paths\/index\.html/);
+});
+
+test('renderer: media images, pipe tables, details and mermaid blocks', () => {
+  const ctx = { base: '../', titleOf: (s) => s };
+  assert.equal(renderInline('![Planes of the body](media/a/planes.svg)', ctx), '<img src="../media/a/planes.svg" alt="Planes of the body" loading="lazy">');
+  assert.equal(renderInline('![x](https://evil.example/x.png)', ctx), '', 'remote images are dropped');
+  assert.equal(renderInline('![x](media/../secret.png)', ctx), '', 'path traversal is dropped');
+  assert.ok(!renderInline('![a" onerror="x](media/a/b.png)', ctx).includes('" onerror'), 'alt text is escaped');
+  const table = renderBlocks('| Country | Units |\n|---|---:|\n| Slovenia | 212 [^1] |\n| *Austria* | 9 |', ctx);
+  assert.match(table, /^<div class="table-wrap"><table><thead><tr><th scope="col">Country<\/th><th scope="col">Units<\/th><\/tr><\/thead><tbody><tr><td>Slovenia<\/td><td>212/);
+  assert.match(table, /<td><em>Austria<\/em><\/td><td>9<\/td><\/tr><\/tbody><\/table><\/div>$/);
+  assert.equal(renderBlocks('| not | a table |', ctx), '<p>| not | a table |</p>', 'a pipe row without a separator stays a paragraph');
+  assert.equal(renderBlocks('<details><summary>Description</summary>\n\n- one\n- two\n</details>', ctx), '<details><summary>Description</summary><ul><li>one</li><li>two</li></ul></details>');
+  assert.equal(renderBlocks('```mermaid\nflowchart LR\n  A --> B\n```', ctx), '<pre class="mermaid"><code>flowchart LR\n  A --&gt; B</code></pre>');
 });

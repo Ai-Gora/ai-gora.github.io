@@ -144,7 +144,7 @@ export function loadContent(root) {
       for (const b of bullets) if (!extractCitations(b).length) err(a.file, `Key claims bullet has no citation: "${b.replace(/^\s*[-*]\s+/, '').trim()}"`);
     }
     for (const [i, s] of a.sections.entries()) {
-      if (s.level !== 2 || s.anchor === 'sources' || s.anchor === 'key-claims') continue;
+      if (s.level !== 2 || s.anchor === 'sources' || s.anchor === 'key-claims' || s.anchor === 'quiz') continue; // STYLE S2: Quiz points to quizzes/<slug>.yaml
       let text = s.text;
       for (let j = i + 1; j < a.sections.length && a.sections[j].level > 2; j++) text += `\n${a.sections[j].text}`;
       if (!extractCitations(text).length) err(a.file, `section '#${s.anchor || s.heading}' has no citation (every claim section needs a source)`);
@@ -175,6 +175,14 @@ export function loadContent(root) {
     quizzes.push({ ...q, slug: a.fm.slug, file: f });
   }
 
+  // Images referenced in articles must exist in media/ (STYLE V4).
+  for (const a of articles) {
+    for (const m of a.body.matchAll(/!\[[^\]]*\]\(([^)\s]+)\)/g)) {
+      const src = m[1];
+      if (!/^media\/[A-Za-z0-9._/-]+\.(svg|png|jpe?g|webp|gif)$/i.test(src) || src.split('/').includes('..')) err(a.file, `image ${src} must be a media/ path to an svg, png, jpg, webp or gif file`);
+      else if (!fs.existsSync(path.join(root, src)) ) err(a.file, `image ${src} does not exist`);
+    }
+  }
   // STYLE L1/L2/L5: image sidecars with TASL fields and an allowed licence.
   for (const e of checkMediaDir(root)) errors.push(e);
   // STYLE V2/V4 errors and W2 sentence-length warnings, per article.
@@ -286,6 +294,17 @@ export function buildOutputs(content) {
 }
 
 /** Merge maps of { relativePath: string } into one new object, rejecting duplicate paths. */
+/** Copy committed media images (not chart.svg, which the chart build renders) into the site: { 'media/...': Buffer }. */
+export function mediaOutputs(root) {
+  const out = {};
+  for (const f of walk(path.join(root, 'media'), '')) {
+    const rel = path.relative(root, f).split(path.sep).join('/');
+    if (!/\.(svg|png|jpe?g|webp|gif)$/i.test(rel) || /\/chart\.svg$/.test(rel)) continue;
+    out[rel] = fs.readFileSync(f);
+  }
+  return out;
+}
+
 export function mergeOutputs(...maps) {
   const out = {};
   for (const map of maps) {

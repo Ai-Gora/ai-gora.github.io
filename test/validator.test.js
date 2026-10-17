@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { loadContent, buildOutputs, mergeOutputs, resolveOutDir } from '../scripts/lib.js';
+import { loadContent, buildOutputs, mergeOutputs, mediaOutputs, resolveOutDir } from '../scripts/lib.js';
 
 const REPO = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -180,8 +180,8 @@ test("article slug 'index' is reserved", () => {
 
 test('citation inside a ### subsection counts for its ## section', () => {
   const { errors } = fixture((d) => edit(d, PHOTO, (t) => { const n = t.replace(
-    'Almost all oxygen in the atmosphere comes from photosynthesis.[^1]\nPrinted botany texts spread this knowledge after the [[printing-press|printing press]].',
-    'Almost all oxygen in the atmosphere comes from photosynthesis.\nPrinted botany texts spread this knowledge after the [[printing-press|printing press]].\n\n### Detail {#detail}\n\nMost oxygen is made by phytoplankton in the ocean.[^1]'
+    'Photosynthesis produces the oxygen in the atmosphere.[^3]\nPrinted botany texts spread this knowledge after the [[printing-press|printing press]].',
+    'Photosynthesis produces the oxygen in the atmosphere.\nPrinted botany texts spread this knowledge after the [[printing-press|printing press]].\n\n### Detail {#detail}\n\nMost oxygen is made by phytoplankton in the ocean.[^1]'
   ); assert.notEqual(n, t, 'fixture edit must apply'); return n; }));
   assert.deepEqual(errors, []);
 });
@@ -202,4 +202,26 @@ test('article JSON output escapes < and keeps jsonld.headline', () => {
   const out = buildOutputs(content)['a/photosynthesis.json'];
   assert.ok(!out.includes('<'));
   assert.equal(JSON.parse(out).jsonld.headline, 'Photo</script>');
+});
+
+test('a ## Quiz section that points to the quiz file needs no citation (STYLE S2)', () => {
+  const { errors } = fixture((d) => edit(d, PHOTO, (t) => t.replace('## Sources {#sources}', '## Quiz {#quiz}\n\nTry the [[photosynthesis|quiz]].\n\n## Sources {#sources}')));
+  assert.deepEqual(errors, []);
+});
+
+test('article images must be existing media/ files', () => {
+  const { errors } = fixture((d) => edit(d, PHOTO, (t) => t.replace('## Sources {#sources}', '![Leaf](media/photosynthesis/leaf.png)\n![Remote](https://example.com/x.png)\n\n## Sources {#sources}')));
+  hasError(errors, /image media\/photosynthesis\/leaf\.png does not exist/);
+  hasError(errors, /image https:\/\/example\.com\/x\.png must be a media\/ path/);
+});
+
+test('committed media images are copied to the site, chart.svg is left to the chart build', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'aigora-media-'));
+  fs.mkdirSync(path.join(dir, 'media/a/c'), { recursive: true });
+  fs.writeFileSync(path.join(dir, 'media/a/photo.webp'), Buffer.from([1, 2, 3]));
+  fs.writeFileSync(path.join(dir, 'media/a/photo.webp.license.yaml'), 'file: photo.webp\n');
+  fs.writeFileSync(path.join(dir, 'media/a/c/chart.svg'), '<svg/>');
+  const out = mediaOutputs(dir);
+  assert.deepEqual(Object.keys(out), ['media/a/photo.webp']);
+  assert.ok(Buffer.isBuffer(out['media/a/photo.webp']));
 });

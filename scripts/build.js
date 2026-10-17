@@ -3,7 +3,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { loadContent, buildOutputs, mergeOutputs, resolveOutDir } from './lib.js';
+import { loadContent, buildOutputs, mergeOutputs, mediaOutputs, resolveOutDir } from './lib.js';
 import { buildSite } from './site.js';
 import { buildCharts } from './charts.js';
 
@@ -33,7 +33,7 @@ if (check) process.exit(0);
 
 const data = buildOutputs(content);
 try {
-  const files = mergeOutputs(data, buildSite(content, data), charts.outputs);
+  const files = mergeOutputs(data, buildSite(content, data), charts.outputs, mediaOutputs(root));
   fs.rmSync(outDir, { recursive: true, force: true });
   for (const [rel, output] of Object.entries(files)) {
     const p = path.join(outDir, rel);
