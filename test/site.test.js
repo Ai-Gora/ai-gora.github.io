@@ -2,9 +2,9 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { loadContent, buildOutputs } from '../scripts/lib.js';
+import { loadContent, buildOutputs, SITE_URL } from '../scripts/lib.js';
 import { buildSite, renderInline, esc } from '../scripts/site.js';
-import { lessonPath, expandTopics } from '../web/assets/lesson-path.js';
+import { lessonPath, expandTopics, pathLanguages } from '../web/assets/lesson-path.js';
 
 const REPO = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const { content } = loadContent(REPO);
@@ -32,6 +32,23 @@ test('article page: anchors, wikilinks, citations, sources, backlinks, JSON-LD, 
   assert.ok(!/<script(?! type="(module|application\/ld\+json)")/.test(html), 'only module and JSON-LD scripts');
 });
 
+test('article page: language switcher links translations', () => {
+  const en = site['a/bela-krajina-dialects.html'];
+  assert.ok(en.includes('<nav class="langs" aria-label="Languages">'), 'en page has a language nav');
+  assert.ok(en.includes('<span aria-current="true" lang="en">English</span>'), 'current language first');
+  assert.ok(en.includes('<a href="belokranjska-narecja.html" hreflang="sl" lang="sl" rel="alternate">Slovenščina</a>'), 'links to the translation');
+  assert.ok(en.includes('href="belokranjska-narecja.html" hreflang="sl"'), 'nav switcher stays relative');
+  assert.ok(en.includes(`<link rel="alternate" hreflang="sl" href="${SITE_URL}/a/belokranjska-narecja.html">`), 'head advertises the translation absolutely');
+  assert.ok(en.includes(`<link rel="alternate" hreflang="en" href="${SITE_URL}/a/bela-krajina-dialects.html">`), 'head advertises itself absolutely');
+
+  const sl = site['a/belokranjska-narecja.html'];
+  assert.ok(sl.includes('<html lang="sl">'), 'sl page declares its language');
+  assert.ok(sl.includes('<a href="bela-krajina-dialects.html" hreflang="en" lang="en" rel="alternate">English</a>'), 'links back to the en article');
+
+  assert.ok(!site['a/photosynthesis.html'].includes('class="langs"'), 'no language nav without translations');
+  assert.ok(site['a/photosynthesis.html'].includes(`<link rel="canonical" href="${SITE_URL}/a/photosynthesis.html">`), 'article declares its canonical URL');
+});
+
 test('inline renderer escapes HTML and neutralises javascript: links', () => {
   const ctx = { base: '../', titleOf: (s) => s };
   assert.equal(renderInline('<b>x</b>', ctx), '&lt;b&gt;x&lt;/b&gt;');
@@ -44,6 +61,19 @@ test('inline renderer keeps emphasis out of link hrefs', () => {
   const html = renderInline('[x](https://e.org/a*b*c) and *em*', { base: '../', titleOf: (s) => s });
   assert.ok(html.includes('href="https://e.org/a*b*c"'));
   assert.ok(html.includes('<em>em</em>'));
+});
+
+test('inline renderer spans emphasis across links and wikilinks', () => {
+  const ctx = { base: '../', titleOf: (s) => s };
+  const bold = renderInline('**a [l](https://u.org) b**', ctx);
+  assert.ok(bold.includes('<strong>a <a href="https://u.org">l</a> b</strong>'));
+  assert.ok(!bold.includes('*'));
+  assert.match(renderInline('*see [[photosynthesis]] now*', ctx), /<em>see <a href="\.\.\/a\/photosynthesis\.html">photosynthesis<\/a> now<\/em>/);
+  assert.ok(renderInline('*[[photosynthesis]]*', ctx).startsWith('<em><a '));
+  const mixed = renderInline('[x](https://e.org/a*b*c) and *em*', ctx);
+  assert.ok(mixed.includes('href="https://e.org/a*b*c"'));
+  assert.ok(mixed.includes('<em>em</em>'));
+  assert.equal(renderInline('2 * 3 * 4', ctx), '2 * 3 * 4');
 });
 
 test('quiz page works without JS: labelled inputs and a Show answer disclosure', () => {
@@ -65,6 +95,59 @@ test('lesson path: interests include sub-topics and prerequisites come first', (
   assert.match(site['paths/linguistics.html'], /<ol class="path">[\s\S]*printing-press[\s\S]*bela-krajina-dialects/);
 });
 
+test('graph nodes expose lang and translation slugs', () => {
+  for (const n of graph.nodes) {
+    assert.equal(typeof n.lang, 'string');
+    assert.equal(typeof n.translations, 'object');
+  }
+  const en = graph.nodes.find((n) => n.slug === 'bela-krajina-dialects');
+  assert.equal(en.lang, 'en');
+  assert.equal(en.translations.sl, 'belokranjska-narecja');
+});
+
+test('lesson path filters by language and swaps translated prerequisites', () => {
+  const sl = lessonPath(graph, topics, ['linguistics'], { lang: 'sl' });
+  const slugs = sl.map((s) => s.slug);
+  assert.ok(slugs.includes('belokranjska-narecja'));
+  assert.ok(!slugs.includes('bela-krajina-dialects'));
+  for (const s of sl.filter((x) => x.reason === 'interest')) assert.equal(s.lang, 'sl');
+
+  assert.deepEqual(lessonPath(graph, topics, ['linguistics'], { lang: 'en' }).map((s) => [s.slug, s.reason]), [['printing-press', 'prerequisite'], ['bela-krajina-dialects', 'interest']]);
+
+  const both = lessonPath(graph, topics, ['linguistics']).map((s) => s.slug);
+  assert.ok(both.includes('bela-krajina-dialects') && both.includes('belokranjska-narecja'));
+
+  assert.deepEqual(pathLanguages(graph), ['en', 'sl']);
+});
+
+test('site builds a no-JS language filter and per-language lesson path pages', () => {
+  for (const f of ['paths/sl/index.html', 'paths/en/index.html', 'paths/sl/linguistics.html', 'paths/en/linguistics.html']) assert.ok(f in site, `missing ${f}`);
+
+  assert.ok(site['paths/sl/linguistics.html'].includes('belokranjska-narecja.html'), 'sl path links the sl article');
+  assert.ok(!site['paths/sl/linguistics.html'].includes('a/bela-krajina-dialects.html'), 'sl path does not link the en article');
+  assert.ok(site['paths/en/linguistics.html'].includes('bela-krajina-dialects.html'), 'en path links the en article');
+  assert.ok(!site['paths/en/linguistics.html'].includes('belokranjska-narecja'), 'en path does not link the sl article');
+
+  const index = site['paths/index.html'];
+  assert.ok(index.includes('<nav class="lang-filter" aria-label="Language">'), 'index has a language filter nav');
+  assert.ok(index.includes('sl/index.html'), 'index links the sl variant');
+  assert.ok(index.includes('<label for="path-lang">'), 'index offers a language select');
+
+  assert.ok(site['paths/sl/index.html'].includes('<a href="index.html" aria-current="page" lang="sl">Slovenščina</a>'), 'sl index marks Slovenščina current');
+  assert.ok(site['paths/linguistics.html'].includes('<a href="linguistics.html" aria-current="page">All languages</a>'), 'all-languages path marks All languages current');
+  assert.ok(site['paths/linguistics.html'].includes('<h3 lang="en">'), 'steps declare their language');
+  assert.ok(site['paths/linguistics.html'].includes('Intro · English'), 'meta line names the step language');
+});
+
+test('lesson path replaces a foreign prerequisite with its existing translation', () => {
+  const g = { nodes: [
+    { slug: 'a-sl', id: 'a-sl', title: 'A sl', topics: ['other'], level: 'intro', lang: 'sl', prerequisites: [], sections: [], quizzes: [] },
+    { slug: 'a-en', id: 'a-en', title: 'A en', topics: ['other'], level: 'intro', lang: 'en', translations: { sl: 'a-sl' }, prerequisites: [], sections: [], quizzes: [] },
+    { slug: 'b-sl', id: 'b-sl', title: 'B sl', topics: ['t'], level: 'intro', lang: 'sl', prerequisites: ['a-en'], sections: [], quizzes: [] },
+  ], edges: [] };
+  assert.deepEqual(lessonPath(g, [{ id: 't', parent: null }], ['t'], { lang: 'sl' }).map((s) => [s.slug, s.reason]), [['a-sl', 'prerequisite'], ['b-sl', 'interest']]);
+});
+
 test('lesson path tolerates prerequisite cycles', () => {
   const g = { nodes: [
     { slug: 'a', id: 'a', title: 'A', topics: ['t'], level: 'intro', prerequisites: ['b'], sections: [], quizzes: [] },
@@ -78,6 +161,14 @@ test('search page has a no-JS browse fallback and a labelled search field', asyn
   assert.match(html, /<label for="q">/);
   assert.match(html, /<noscript>/);
   assert.match(html, /id="browse"[\s\S]*a\/photosynthesis\.html#chloroplasts/);
+});
+
+test('search page has a language filter and browse grouped by language', () => {
+  const html = site['search.html'];
+  assert.ok(html.includes('<label for="search-lang">Language</label>'), 'search has a language label');
+  assert.ok(html.includes('<option value="sl">Slovenščina</option>'), 'search offers the sl option');
+  assert.ok(html.includes('<h3 lang="sl">Slovenščina</h3>'), 'browse groups by language');
+  assert.ok(site['index.html'].includes('lang="sl"'), 'home lists articles with their language');
 });
 
 test('buildSite throws instead of overwriting a page (topic id "index" bypassing validation)', () => {

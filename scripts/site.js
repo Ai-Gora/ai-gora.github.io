@@ -3,19 +3,22 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { SITE_NAME, safeJson, jsonLd } from './lib.js';
-import { lessonPath } from '../web/assets/lesson-path.js';
+import { SITE_NAME, SITE_URL, safeJson, jsonLd } from './lib.js';
+import { lessonPath, pathLanguages } from '../web/assets/lesson-path.js';
 
 const ASSET_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'web', 'assets');
 
 export const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+export const LANG_NAMES = { en: 'English', sl: 'Slovenščina' };
+const langName = (l) => LANG_NAMES[l] || l;
 const safeUrl = (u) => (/^(https?:\/\/|mailto:|#|\.{0,2}\/|[a-z0-9-]+\.html)/i.test(u) && !/^\s*javascript:/i.test(u) ? u : '#');
+const NUL = String.fromCharCode(0);
 
 /** Inline Markdown: code, wikilinks, links, bold, italics, [^n] citations. Input is raw text; output is safe HTML. */
 export function renderInline(text, ctx) {
   return text.split(/(`[^`\n]+`)/).map((part, i) => {
     if (i % 2) return `<code>${esc(part.slice(1, -1))}</code>`;
-    let s = esc(part);
+    let s = esc(part).replaceAll(NUL, ''); // NUL is reserved for tag placeholders below
     s = s.replace(/\[\[([^\]|#]+)(?:#([^\]|]+))?(?:\|([^\]]+))?\]\]/g, (_m, slug, anchor, txt) => {
       slug = slug.trim();
       const title = ctx.titleOf(slug);
@@ -23,7 +26,10 @@ export function renderInline(text, ctx) {
       return `<a href="${href}">${txt ? txt.trim() : esc(title || slug)}</a>`;
     });
     s = s.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (_m, txt, url) => `<a href="${safeUrl(url)}">${txt}</a>`);
-    s = s.split(/(<[^>]+>)/).map((seg, j) => (j % 2 ? seg : seg.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>').replace(/(^|[\s(])\*([^*\s][^*]*)\*/g, '$1<em>$2</em>'))).join('');
+    const tags = [];
+    s = s.replace(/<[^>]+>/g, (tag) => `${NUL}${tags.push(tag) - 1}${NUL}`);
+    s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>').replace(new RegExp(`(^|[\\s(]|${NUL})\\*([^*\\s][^*]*)\\*`, 'g'), '$1<em>$2</em>');
+    s = s.replace(new RegExp(`${NUL}(\\d+)${NUL}`, 'g'), (_m, n) => tags[n]);
     s = s.replace(/\[\^(\d+)\]/g, (_m, n) => `<sup class="cite"><a href="#source-${n}" aria-label="Source ${n}">[${n}]</a></sup>`);
     return s;
   }).join('');
@@ -64,6 +70,7 @@ export function renderBlocks(text, ctx) {
 const NAV = [['index.html', 'Home'], ['search.html', 'Search'], ['paths/index.html', 'Lesson paths'], ['quiz/index.html', 'Quizzes']];
 
 function page({ title, base, lang = 'en', current, body, head = '', scripts = [], description = '' }) {
+  const uiLang = lang === 'en' ? '' : ' lang="en"'; // site chrome is English-only for now
   const nav = NAV.map(([href, label]) => `<li><a href="${base}${href}"${current === href ? ' aria-current="page"' : ''}>${label}</a></li>`).join('');
   return `<!doctype html>
 <html lang="${esc(lang)}">
@@ -76,7 +83,7 @@ ${description ? `<meta name="description" content="${esc(description)}">\n` : ''
 ${head}</head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
-<header class="site">
+<header class="site"${uiLang}>
 <a class="brand" href="${base}index.html">${SITE_NAME}</a>
 <nav aria-label="Site"><ul>${nav}</ul></nav>
 <form class="quick-search" role="search" aria-label="Site search" action="${base}search.html" method="get">
@@ -88,7 +95,7 @@ ${head}</head>
 <main id="main" tabindex="-1">
 ${body}
 </main>
-<footer class="site">
+<footer class="site"${uiLang}>
 <p>Content: <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a>. Code: MIT. <a href="${base}llms.txt">llms.txt</a> · <a href="${base}data/graph.json">graph.json</a> · <a href="https://github.com/Ai-Gora/ai-gora.github.io">Source on GitHub</a></p>
 </footer>
 ${scripts.map((s) => `<script type="module" src="${base}assets/${s}"></script>`).join('\n')}
@@ -122,11 +129,21 @@ function articlePage(a, ctx) {
   const quiz = ctx.quizSlugs.has(fm.slug);
   const draft = fm.status === 'draft' ? '<p class="notice" role="note"><strong>Draft:</strong> this article has not been reviewed yet.</p>' : '';
   const stale = fm.status === 'stale' ? '<p class="notice" role="note"><strong>Stale:</strong> this article is due for review and may be out of date.</p>' : '';
+  const langs = [{ lang: fm.lang, slug: fm.slug, current: true }];
+  for (const [l, id] of Object.entries(fm.translations || {})) {
+    if (l === fm.lang) continue;
+    const t = ctx.byId.get(id);
+    if (t) langs.push({ lang: l, slug: t.fm.slug, current: false });
+  }
+  const translated = langs.length > 1;
+  const langNav = translated ? `<nav class="langs" aria-label="Languages"><ul>${langs.map((x) => (x.current ? `<li><span aria-current="true" lang="${esc(x.lang)}">${esc(langName(x.lang))}</span></li>` : `<li><a href="${esc(x.slug)}.html" hreflang="${esc(x.lang)}" lang="${esc(x.lang)}" rel="alternate">${esc(langName(x.lang))}</a></li>`)).join('')}</ul></nav>\n` : '';
+  const canonical = `<link rel="canonical" href="${esc(`${SITE_URL}/a/${fm.slug}.html`)}">\n`;
+  const altLinks = translated ? langs.map((x) => `<link rel="alternate" hreflang="${esc(x.lang)}" href="${esc(`${SITE_URL}/a/${x.slug}.html`)}">\n`).join('') : '';
   const html = `<article class="article">
 <header>
 <p class="kicker">${esc(levelLabel(fm.level))} · ${topicLinks}</p>
 <h1>${esc(fm.title)}</h1>
-<p class="summary"><strong>In short:</strong> ${esc(fm.summary.trim())}</p>
+${langNav}<p class="summary"><strong>In short:</strong> ${esc(fm.summary.trim())}</p>
 ${draft}${stale}<dl class="meta">
 <div><dt>Status</dt><dd>${esc(fm.status)}</dd></div>
 <div><dt>Confidence</dt><dd>${esc(fm.confidence)}</dd></div>
@@ -145,7 +162,7 @@ ${quiz ? `<p><a class="button" href="../quiz/${fm.slug}.html">Take the quiz on $
 <p class="muted">ID <code>${esc(fm.id)}</code> · Licence ${esc(fm.license)} · <a href="${fm.slug}.md">Markdown source</a> · <a href="${fm.slug}.json">JSON</a> · <a href="https://github.com/Ai-Gora/ai-gora.github.io/commits/main/${esc(path.relative(ctx.root, a.file).split(path.sep).join('/'))}">History</a></p>
 </footer>
 </article>`;
-  return page({ title: fm.title, base: '../', lang: fm.lang, body: html, description: fm.summary.trim(), head: `<script type="application/ld+json">\n${safeJson(jsonLd(a))}</script>\n` });
+  return page({ title: fm.title, base: '../', lang: fm.lang, body: html, description: fm.summary.trim(), head: `${canonical}${altLinks}<script type="application/ld+json">\n${safeJson(jsonLd(a))}</script>\n` });
 }
 
 function questionHtml(q, slug, ctx) {
@@ -187,8 +204,8 @@ function pathList(steps, ctx, base) {
     const a = ctx.bySlug.get(s.slug);
     const secs = a.sections.filter((x) => x.level === 2 && x.anchor && !['key-claims', 'sources'].includes(x.anchor));
     return `<li class="step">
-<h3><a href="${base}a/${s.slug}.html">${esc(s.title)}</a></h3>
-<p class="muted">${esc(levelLabel(s.level))}${s.reason === 'prerequisite' ? ' · prerequisite' : ''}</p>
+<h3 lang="${esc(s.lang)}"><a href="${base}a/${s.slug}.html">${esc(s.title)}</a></h3>
+<p class="muted">${esc(levelLabel(s.level))} · ${esc(langName(s.lang))}${s.reason === 'prerequisite' ? ' · prerequisite' : ''}</p>
 <p>${esc(a.fm.summary.trim())}</p>
 ${secs.length ? `<details><summary>Sections</summary><ul>${secs.map((x) => `<li><a href="${base}a/${s.slug}.html#${x.anchor}">${esc(x.heading)}</a></li>`).join('')}</ul></details>` : ''}
 ${s.quizzes.length ? `<p><a href="${base}quiz/${s.slug}.html">Quiz (${s.quizzes.length} question${s.quizzes.length === 1 ? '' : 's'})</a> <span class="progress" data-progress="${s.slug}"></span></p>` : ''}
@@ -201,10 +218,12 @@ export function buildSite(content, data) {
   const graph = JSON.parse(data['data/graph.json']);
   const topicsData = JSON.parse(data['data/topics.json']);
   const backlinks = JSON.parse(data['data/backlinks.json']);
+  const langs = pathLanguages(graph);
   const sorted = [...content.articles].sort((x, y) => x.fm.slug.localeCompare(y.fm.slug));
   const ctx = {
     root: content.root,
     bySlug: content.bySlug,
+    byId: content.byId,
     backlinks,
     quizSlugs: new Set(content.quizzes.map((q) => q.slug)),
     titleOf: (s) => content.bySlug.get(s)?.fm.title || s,
@@ -216,7 +235,7 @@ export function buildSite(content, data) {
   for (const a of sorted) out[`a/${a.fm.slug}.html`] = articlePage(a, ctx);
   for (const q of content.quizzes) out[`quiz/${q.slug}.html`] = quizPage(q, ctx);
 
-  const articleItem = (a, base) => `<li><a href="${base}a/${a.fm.slug}.html">${esc(a.fm.title)}</a> <span class="muted">· ${esc(levelLabel(a.fm.level))}</span><br><span class="desc">${esc(a.fm.summary.trim().split('\n')[0])}</span></li>`;
+  const articleItem = (a, base) => `<li><a href="${base}a/${a.fm.slug}.html" lang="${esc(a.fm.lang)}">${esc(a.fm.title)}</a> <span class="muted">· ${esc(levelLabel(a.fm.level))} · ${esc(langName(a.fm.lang))}</span><br><span class="desc" lang="${esc(a.fm.lang)}">${esc(a.fm.summary.trim().split('\n')[0])}</span></li>`;
   const usedTopics = topicsData.filter((t) => lessonPath(graph, topicsData, [t.id]).length);
 
   out['index.html'] = page({ title: SITE_NAME, base: '', current: 'index.html', description: 'A free, open-source, permanent library readable by humans and machines.', body: `<h1>${SITE_NAME}</h1>
@@ -231,6 +250,7 @@ export function buildSite(content, data) {
 <form id="search" role="search" aria-label="Article search" action="search.html" method="get">
 <label for="q">Search articles and sections</label>
 <div class="row"><input id="q" name="q" type="search" autocomplete="off" aria-describedby="search-help"><button type="submit">Search</button></div>
+<p><label for="search-lang">Language</label> <select id="search-lang" name="lang"><option value="">All languages</option>${langs.map((c) => `<option value="${esc(c)}">${esc(langName(c))}</option>`).join('')}</select></p>
 <p id="search-help" class="muted">Matches titles, section headings and text.</p>
 </form>
 <p id="search-status" class="status" role="status" aria-live="polite"></p>
@@ -238,19 +258,34 @@ export function buildSite(content, data) {
 <noscript><p class="notice">Search needs JavaScript. Browse every article and section below instead.</p></noscript>
 <section id="browse" aria-labelledby="browse-h">
 <h2 id="browse-h">Browse all articles</h2>
-<ul class="list">${sorted.map((a) => `<li><a href="a/${a.fm.slug}.html">${esc(a.fm.title)}</a><ul>${a.sections.filter((s) => s.level === 2 && s.anchor && !['key-claims', 'sources'].includes(s.anchor)).map((s) => `<li><a href="a/${a.fm.slug}.html#${s.anchor}">${esc(s.heading)}</a></li>`).join('')}</ul></li>`).join('')}</ul>
+${langs.map((code) => `<h3 lang="${esc(code)}">${esc(langName(code))}</h3>
+<ul class="list">${sorted.filter((a) => a.fm.lang === code).map((a) => `<li lang="${esc(code)}"><a href="a/${a.fm.slug}.html">${esc(a.fm.title)}</a><ul>${a.sections.filter((s) => s.level === 2 && s.anchor && !['key-claims', 'sources'].includes(s.anchor)).map((s) => `<li><a href="a/${a.fm.slug}.html#${s.anchor}">${esc(s.heading)}</a></li>`).join('')}</ul></li>`).join('')}</ul>`).join('\n')}
 </section>` });
 
   out['quiz/index.html'] = page({ title: 'Quizzes', base: '../', current: 'quiz/index.html', scripts: ['paths.js'], body: `<h1>Quizzes</h1>
 <ul class="list">${content.quizzes.slice().sort((x, y) => x.slug.localeCompare(y.slug)).map((q) => `<li><a href="${q.slug}.html">${esc(ctx.titleOf(q.slug))}</a> <span class="muted">· ${q.questions.length} question${q.questions.length === 1 ? '' : 's'}</span> <span class="progress" data-progress="${q.slug}"></span></li>`).join('')}</ul>` });
 
+  const pathIntro = 'Choose an interest to get an ordered reading list. Prerequisites come first, then articles from intro to deep.';
+  const langFilterNav = (currentLang, hrefFor) => {
+    const item = (code) => {
+      const href = hrefFor(code);
+      if (href === null) return '';
+      const current = code === currentLang ? ' aria-current="page"' : '';
+      const langAttr = code ? ` lang="${esc(code)}"` : '';
+      return `<li><a href="${esc(href)}"${current}${langAttr}>${esc(code ? langName(code) : 'All languages')}</a></li>`;
+    };
+    return `<nav class="lang-filter" aria-label="Language"><ul>${[null, ...langs].map(item).join('')}</ul></nav>`;
+  };
+
   out['paths/index.html'] = page({ title: 'Lesson paths', base: '../', current: 'paths/index.html', scripts: ['paths.js'], body: `<h1>Lesson paths</h1>
-<p>Choose an interest to get an ordered reading list. Prerequisites come first, then articles from intro to deep.</p>
+${langFilterNav(null, (code) => (code ? `${code}/index.html` : 'index.html'))}
+<p>${pathIntro}</p>
 <ul class="list">${usedTopics.map((t) => `<li><a href="${t.id}.html">${esc(t.title)}</a> <span class="muted">· ${lessonPath(graph, topicsData, [t.id]).length} articles</span><br><span class="desc">${esc(t.description)}</span></li>`).join('')}</ul>
 <form id="path-builder" data-js hidden>
 <fieldset><legend>Combine interests</legend>
 <ul class="options">${usedTopics.map((t) => `<li><input type="checkbox" id="i-${t.id}" name="interest" value="${t.id}"> <label for="i-${t.id}">${esc(t.title)}</label></li>`).join('')}</ul>
 </fieldset>
+<p><label for="path-lang">Language</label> <select id="path-lang" name="lang"><option value="">All languages</option>${langs.map((c) => `<option value="${esc(c)}">${esc(langName(c))}</option>`).join('')}</select></p>
 <button type="submit">Build my path</button>
 </form>
 <section id="custom-path" aria-live="polite"></section>` });
@@ -258,11 +293,30 @@ export function buildSite(content, data) {
   for (const t of usedTopics) {
     const steps = lessonPath(graph, topicsData, [t.id]);
     const related = (t.related || []).filter((r) => usedTopics.some((u) => u.id === r));
+    const langHref = (code) => (!code ? `${t.id}.html` : (lessonPath(graph, topicsData, [t.id], { lang: code }).length ? `${code}/${t.id}.html` : null));
     out[`paths/${t.id}.html`] = page({ title: `Lesson path: ${t.title}`, base: '../', current: 'paths/index.html', scripts: ['paths.js'], body: `<h1>Lesson path: ${esc(t.title)}</h1>
+${langFilterNav(null, langHref)}
 <p>${esc(t.description)}</p>
 <h2>Reading order</h2>
 ${pathList(steps, ctx, '../')}
 ${related.length ? `<h2>Related interests</h2><ul class="chips">${related.map((r) => `<li><a href="${r}.html">${esc(ctx.topicTitle(r))}</a></li>`).join('')}</ul>` : ''}` });
+  }
+
+  for (const code of langs) {
+    const codeTopics = usedTopics.filter((t) => lessonPath(graph, topicsData, [t.id], { lang: code }).length);
+    const indexHref = (c) => (!c ? '../index.html' : c === code ? 'index.html' : `../${c}/index.html`);
+    out[`paths/${code}/index.html`] = page({ title: `Lesson paths (${langName(code)})`, base: '../../', current: 'paths/index.html', scripts: ['paths.js'], body: `<h1>Lesson paths (${esc(langName(code))})</h1>
+${langFilterNav(code, indexHref)}
+<p>${pathIntro}</p>
+<ul class="list">${codeTopics.map((t) => `<li><a href="${t.id}.html">${esc(t.title)}</a> <span class="muted">· ${lessonPath(graph, topicsData, [t.id], { lang: code }).length} articles</span><br><span class="desc">${esc(t.description)}</span></li>`).join('')}</ul>` });
+    for (const t of codeTopics) {
+      const topicHref = (c) => (!c ? `../${t.id}.html` : c === code ? `${t.id}.html` : (lessonPath(graph, topicsData, [t.id], { lang: c }).length ? `../${c}/${t.id}.html` : null));
+      out[`paths/${code}/${t.id}.html`] = page({ title: `Lesson path: ${t.title} (${langName(code)})`, base: '../../', current: 'paths/index.html', scripts: ['paths.js'], body: `<h1>Lesson path: ${esc(t.title)} (${esc(langName(code))})</h1>
+${langFilterNav(code, topicHref)}
+<p>${esc(t.description)}</p>
+<h2>Reading order</h2>
+${pathList(lessonPath(graph, topicsData, [t.id], { lang: code }), ctx, '../../')}` });
+    }
   }
 
   for (const f of fs.readdirSync(ASSET_DIR).sort()) out[`assets/${f}`] = fs.readFileSync(path.join(ASSET_DIR, f), 'utf8');

@@ -126,6 +126,7 @@ export function loadContent(root) {
       const t = byId.get(tid);
       if (!t) err(a.file, `translation ${lang}: '${tid}' does not exist`);
       else if (t.fm.lang !== lang) err(a.file, `translation ${lang}: '${tid}' has lang '${t.fm.lang}'`);
+      else if ((t.fm.translations || {})[a.fm.lang] !== a.fm.id) err(a.file, `translation ${lang}: '${tid}' does not link back (add translations: {${a.fm.lang}: ${a.fm.id}} to ${t.fm.slug})`);
     }
 
     // Citations
@@ -238,6 +239,8 @@ export function buildOutputs(content) {
   put('data/graph.json', {
     nodes: sorted.map((a) => ({
       id: a.fm.id, slug: a.fm.slug, title: a.fm.title, topics: a.fm.topics, level: a.fm.level,
+      lang: a.fm.lang,
+      translations: Object.fromEntries(Object.entries(a.fm.translations || {}).map(([lang, id]) => [lang, content.byId.get(id)?.fm.slug]).filter(([, slug]) => slug)),
       links: [...new Set(a.links.map((l) => l.slug))], prerequisites: a.fm.prerequisites || [],
       quizzes: (quizBySlug.get(a.fm.slug)?.questions || []).map((q) => `${a.fm.slug}/${q.id}`),
       sections: sectionsOf(a).map((s) => s.anchor),
@@ -250,8 +253,8 @@ export function buildOutputs(content) {
   const plain = (t) => t.replace(WIKILINK, (_m, s, _a, txt) => txt || s).replace(CITE, '').replace(/[*_`>#]/g, '').replace(/\s+/g, ' ').trim();
   put('data/search-index.json', sorted.flatMap((a) => a.sections.filter((s) => s.text).map((s) => ({
     id: `${a.fm.slug}#${s.anchor || 'top'}`, article: a.fm.id, slug: a.fm.slug, anchor: s.anchor || null,
-    title: a.fm.title, heading: s.heading || null, topics: a.fm.topics, level: a.fm.level, lang: a.fm.lang,
-    updated: a.fm.updated, license: a.fm.license, text: plain(s.text),
+    title: a.fm.title, heading: s.heading || null, topics: a.fm.topics, authors: a.fm.authors, ai_assisted: a.fm.ai_assisted === true,
+    level: a.fm.level, lang: a.fm.lang, updated: a.fm.updated, license: a.fm.license, text: plain(s.text),
   }))));
   put('data/quizzes/index.json', quizzes.map((q) => ({ slug: q.slug, article: q.article, questions: q.questions.length, file: `data/quizzes/${q.slug}.json` })).sort((x, y) => x.slug.localeCompare(y.slug)));
   for (const q of quizzes) put(`data/quizzes/${q.slug}.json`, { article: q.article, slug: q.slug, questions: q.questions });

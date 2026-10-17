@@ -101,6 +101,16 @@ test('build outputs follow the data contract', () => {
   assert.match(out['llms.txt'], /## Optional/);
 });
 
+test('search-index entries expose authors and ai_assisted metadata', () => {
+  const { content } = fixture();
+  const index = JSON.parse(buildOutputs(content)['data/search-index.json']);
+  assert.ok(index.length > 0);
+  for (const e of index) {
+    assert.ok(Array.isArray(e.authors), `authors must be an array for ${e.id}`);
+    assert.equal(typeof e.ai_assisted, 'boolean', `ai_assisted must be a boolean for ${e.id}`);
+  }
+});
+
 test('one uncited Key claims bullet fails even if another is cited', () => {
   const { errors } = fixture((d) => edit(d, PHOTO, (t) => t.replace('- It happens in chloroplasts in plants.[^2]', '- It happens in chloroplasts in plants.')));
   hasError(errors, /Key claims bullet has no citation: "It happens in chloroplasts in plants."/);
@@ -141,6 +151,11 @@ test('translation pointing at missing id fails', () => {
 test('translation pointing at existing id with wrong lang fails', () => {
   const { errors } = fixture((d) => edit(d, PHOTO, (t) => t.replace('lang: en', 'lang: en\ntranslations: {sl: aig-000002}')));
   hasError(errors, /translation sl: 'aig-000002' has lang 'en'/);
+});
+
+test('translation that does not link back fails', () => {
+  const { errors } = fixture((d) => edit(d, 'articles/linguistics/belokranjska-narecja.md', (t) => t.replace('translations: {en: aig-000003}\n', '')));
+  hasError(errors, /bela-krajina-dialects\.md: translation sl: 'aig-000006' does not link back/);
 });
 
 test('mergeOutputs rejects duplicate output paths and merges distinct maps', () => {

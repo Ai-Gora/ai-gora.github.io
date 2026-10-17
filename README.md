@@ -51,8 +51,8 @@ Paths are relative to the site root.
 | `data/articles.json` | `[{ id, slug, title, summary, category, topics[], level, lang, status, confidence, updated, review_after, md, json }]` |
 | `data/topics.json` | `[{ id, title, description, parent: string\|null, related[], articles: slug[] }]` |
 | `data/backlinks.json` | `{ [slug]: [{ slug, id, title }] }` ("What links here"; every article has a key) |
-| `data/graph.json` | `{ nodes: [{ id, slug, title, topics[], level, links: slug[], prerequisites: slug[], quizzes: "slug/qN"[], sections: anchor[] }], edges: [{ from, to, anchor\|null, type: "link"\|"prerequisite" }] }` |
-| `data/search-index.json` | `[{ id: "slug#anchor", article, slug, anchor\|null, title, heading\|null, topics[], level, lang, updated, license, text }]`, one chunk per section, plain text. Load into a client-side engine (Lunr, MiniSearch, Pagefind) in the browser. |
+| `data/graph.json` | `{ nodes: [{ id, slug, title, topics[], level, lang, translations: { [lang]: slug }, links: slug[], prerequisites: slug[], quizzes: "slug/qN"[], sections: anchor[] }], edges: [{ from, to, anchor\|null, type: "link"\|"prerequisite" }] }` |
+| `data/search-index.json` | `[{ id: "slug#anchor", article, slug, anchor\|null, title, heading\|null, topics[], authors[], ai_assisted, level, lang, updated, license, text }]`, one chunk per section, plain text. Load into a client-side engine (Lunr, MiniSearch, Pagefind) in the browser. |
 | `data/quizzes/index.json` | `[{ slug, article, questions: number, file }]` |
 | `data/quizzes/<slug>.json` | `{ article, slug, questions: [{ id, type, prompt, options?, answer, explain?, ref: "slug#anchor", difficulty?, tags? }] }` |
 | `a/<slug>.md` | raw article source (frontmatter + body) |
@@ -70,10 +70,10 @@ Quiz answers: `single` → option index; `multi` → index list; `true_false` �
 | Page | What it is | Without JS |
 |---|---|---|
 | `index.html` | home: lesson-path interests and all articles | fully works |
-| `a/<slug>.html` | article: summary, metadata, contents, sections with `{#anchor}` ids, wikilinks, `[^n]` citations linked to the source list, prerequisites, "What links here", quiz link, embedded JSON-LD | fully works |
-| `paths/index.html`, `paths/<topic>.html` | interest-based lesson paths from `graph.json` + `topics.json` (sub-topics and prerequisites included, prerequisites first, then intro → core → deep) | fully works; JS adds "combine interests" and quiz scores |
-| `search.html` | client-side search over `data/search-index.json` (accent-insensitive prefix match, `?q=`) | lists every article and section to browse |
-| `quiz/index.html`, `quiz/<slug>.html` | quizzes; JS checks answers against `data/quizzes/<slug>.json` and keeps scores in `localStorage` | "Show answer" disclosure per question |
+| `a/<slug>.html` | article: EN/SL switcher from `translations` (plain links with `hreflang`/`lang`, plus `<link rel="alternate">`), summary, metadata, contents, sections with `{#anchor}` ids, wikilinks, `[^n]` citations linked to the source list, prerequisites, "What links here", quiz link, embedded JSON-LD | fully works |
+| `paths/index.html`, `paths/<topic>.html`, `paths/<lang>/index.html`, `paths/<lang>/<topic>.html` | interest-based lesson paths from `graph.json` + `topics.json` (sub-topics and prerequisites included, prerequisites first, then intro → core → deep); per-language pages swap a prerequisite for its translation when one exists | fully works (language filter is plain links); JS adds "combine interests" with a language select, and quiz scores |
+| `search.html` | client-side search over `data/search-index.json` (accent-insensitive prefix match, no minimum term length, metadata: topics, authors, AI-assisted; `?q=&lang=`) | lists every article and section, grouped by language |
+| `quiz/index.html`, `quiz/<slug>.html` | quizzes; JS checks answers against `data/quizzes/<slug>.json` and keeps scores in `localStorage`. Each check sets every question fresh: correct closes its answer, wrong or unanswered opens it | "Show answer" disclosure per question |
 
 The path ordering lives in `web/assets/lesson-path.js` and is shared by the build and the browser. HTML pages and assets are not listed in `data/manifest.json`, which stays the data contract.
 

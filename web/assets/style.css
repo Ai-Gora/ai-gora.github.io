@@ -46,6 +46,10 @@ blockquote { margin: 0 0 1rem; padding-left: 1rem; border-left: 4px solid var(--
 .muted { color: var(--muted); }
 .kicker { color: var(--muted); margin: 1.5rem 0 0; font-size: 0.9375rem; }
 .kicker + h1 { margin-top: 0.25rem; }
+.langs ul { list-style: none; display: flex; gap: 0.75rem; padding: 0; margin: 0 0 1rem; }
+.langs [aria-current] { font-weight: 700; }
+.lang-filter ul { list-style: none; display: flex; flex-wrap: wrap; gap: 0.75rem; padding: 0; margin: 0 0 1rem; }
+.lang-filter [aria-current] { font-weight: 700; color: var(--fg); }
 .summary { font-size: 1.125rem; }
 .notice { background: var(--notice); padding: 0.5rem 0.75rem; border-radius: 4px; }
 .meta { display: flex; flex-wrap: wrap; gap: 0.25rem 1.25rem; font-size: 0.9375rem; color: var(--muted); }
@@ -73,6 +77,7 @@ blockquote { margin: 0 0 1rem; padding-left: 1rem; border-left: 4px solid var(--
 .progress { color: var(--ok); font-weight: 600; }
 
 input[type="search"], input[type="text"] { font: inherit; padding: 0.45rem 0.6rem; border: 1px solid var(--muted); border-radius: 4px; background: var(--bg); color: var(--fg); min-height: 2.75rem; }
+select { font: inherit; min-height: 2.75rem; padding: 0.3rem 0.5rem; border: 1px solid var(--muted); border-radius: 4px; background: var(--bg); color: var(--fg); }
 button { font: inherit; padding: 0.45rem 1rem; min-height: 2.75rem; border: 1px solid var(--accent); border-radius: 4px; background: var(--accent); color: var(--bg); cursor: pointer; }
 button[type="reset"] { background: transparent; color: var(--accent); }
 .row { display: flex; gap: 0.5rem; margin: 0.25rem 0; }
