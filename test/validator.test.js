@@ -84,7 +84,7 @@ test('unknown topic fails', () => {
 
 test('media without licence sidecar fails', () => {
   const { errors } = fixture((d) => { fs.mkdirSync(path.join(d, 'media/photosynthesis'), { recursive: true }); fs.writeFileSync(path.join(d, 'media/photosynthesis/leaf.png'), 'x'); });
-  hasError(errors, /media file has no licence sidecar/);
+  hasError(errors, /image has no licence sidecar leaf.png.license.yaml/);
 });
 
 test('build outputs follow the data contract', () => {

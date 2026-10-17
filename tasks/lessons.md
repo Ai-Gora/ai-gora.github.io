@@ -10,3 +10,5 @@ One line per mistake hit while building Aigora, so it is not repeated.
 - Site/validator tests pin the sample articles (headings, source order, lesson-path lists, node counts); rewriting a sample article or adding one in the same topic means updating those assertions in the same PR.
 - Applying bold/italics per text segment between tags (my #2 review fix) left literal `*` when emphasis wraps a link; swap tags for placeholders, apply emphasis across the whole string, then restore them.
 - A score comment claimed metadata (weight 0.5) "ranks below any content hit", but exact matches score weight × 2, so 0.5 × 2 tied a text prefix hit (1); check the arithmetic against the max of each field, and put metadata on one entry per article, not every section.
+- Vega swallows data-loader errors (renders an empty chart), so a custom loader's throw never surfaces; validate every spec `url` before rendering.
+- OpenCode can exit or time out without writing files (glm and deepseek, twice each on the style task); check `git status` right after each run, not the agent's summary.
