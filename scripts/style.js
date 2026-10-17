@@ -1,5 +1,6 @@
 // STYLE.md checks: media licences (L1, L2, L5), accessibility (V2, V4), sentence length (W2, warnings only).
 import fs from 'node:fs';
+import { mermaidProblems } from '../web/assets/mermaid-guard.js';
 import path from 'node:path';
 import yaml from 'js-yaml';
 
@@ -118,6 +119,7 @@ export function checkAccessibility(body, offset = 0) {
       const at = `line ${b.start + offset}: `;
       if (!b.lines.some((l) => /^\s*accTitle\s*:/.test(l.text))) errs.push(`${at}mermaid diagram ${mermaid} has no accTitle (STYLE V2)`);
       if (!b.lines.some((l) => /^\s*accDescr\s*(:|\{)/.test(l.text))) errs.push(`${at}mermaid diagram ${mermaid} has no accDescr (STYLE V2)`);
+      for (const reason of mermaidProblems(b.lines.map((l) => l.text).join('\n'))) errs.push(`${at}mermaid diagram ${mermaid}: ${reason} (STYLE V4)`);
     } else if (b.fence === null) {
       for (const l of b.lines) for (const m of l.text.matchAll(/!\[([^\]]*)\]\(([^)\s]*)[^)]*\)/g)) {
         if (!m[1].trim()) errs.push(`line ${l.n + offset}: image ${m[2]} has no alt text (STYLE V4)`);

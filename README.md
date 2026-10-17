@@ -80,6 +80,8 @@ Quiz answers: `single` → option index; `multi` → index list; `true_false` �
 | `search.html` | client-side search over `data/search-index.json` (accent-insensitive prefix match, no minimum term length, metadata: topics, authors, AI-assisted; `?q=&lang=`) | lists every article and section, grouped by language |
 | `quiz/index.html`, `quiz/<slug>.html` | quizzes; JS checks answers against `data/quizzes/<slug>.json` and keeps scores in `localStorage`. Each check sets every question fresh: correct closes its answer, wrong or unanswered opens it | "Show answer" disclosure per question |
 
+UI strings live in `web/assets/i18n.js` (`en`, `sl`; same keys, Slovenian plurals), used at build time and by the quiz/paths scripts, picked by the page's `lang` (article/quiz language, `paths/<lang>/`). Mermaid blocks render client-side with the self-hosted `mermaid` package (copied to `assets/vendor/`, loaded by `assets/diagram.js` only on pages with a diagram; strict security level, dark theme in dark mode); without JS the source and its `accTitle`/`accDescr` caption stay visible.
+
 The path ordering lives in `web/assets/lesson-path.js` and is shared by the build and the browser. HTML pages and assets are not listed in `data/manifest.json`, which stays the data contract.
 
 ## Deploying to GitHub Pages (disabled)

@@ -341,3 +341,46 @@ test('magic bytes must match the extension', () => {
   assert.deepEqual(checkMediaDir(r), []);
 });
 
+
+// Review #10: Mermaid sources may not load external resources (img tags, themeCSS url(), links).
+import { mermaidProblems, MERMAID_SECURE } from '../web/assets/mermaid-guard.js';
+
+const mm = (...body) => `\`\`\`mermaid\n${body.join('\n')}\n\`\`\`\n`;
+const SAFE = ['flowchart LR', '  accTitle: Review flow', '  accDescr: Draft goes to review.'];
+
+test('mermaid: each external-resource pattern is rejected with a clear error', () => {
+  const cases = [
+    [[...SAFE, '%%{init: {"theme":"dark"}}%%', '  A --> B'], 'init directive %%{...}%% is not allowed'],
+    [[...SAFE, '  %%{init: {"themeCSS": ".node{background:url(https://example.com/t.png)}"}}%%', '  A --> B'], 'init directive %%{...}%% is not allowed'],
+    [['---', 'config:', '  theme: dark', '---', ...SAFE, '  A --> B'], '--- config block is not allowed'],
+    [[...SAFE, '  A["<img src=x.png>"] --> B'], 'HTML is not allowed'],
+    [[...SAFE, '  A["#60;img src=x.png#62;"] --> B'], 'HTML is not allowed'],
+    [[...SAFE, '  A["&lt;b&gt;x"] --> B'], 'HTML is not allowed'],
+    [[...SAFE, '  A --> B', '  style A fill:url(#x)'], 'url() is not allowed'],
+    [[...SAFE, '  A["see https://example.com"] --> B'], 'external URLs are not allowed'],
+    [[...SAFE, '  A["http://example.com"] --> B'], 'external URLs are not allowed'],
+    [[...SAFE, '  A["//example.com/x"] --> B'], 'external URLs are not allowed'],
+    [[...SAFE, '  A --> B', '  click A "https://example.com"'], 'external URLs are not allowed'],
+  ];
+  for (const [lines, reason] of cases) {
+    const errs = checkAccessibility(mm(...lines));
+    assert.ok(errs.includes(`line 1: mermaid diagram 1: ${reason} (STYLE V4)`), `${lines.join(' | ')}\n→ ${errs.join('\n')}`);
+  }
+  // The <img> payload from the review is caught twice over (tag and URL).
+  assert.deepEqual(mermaidProblems('flowchart LR\n  A["<img src=https://example.com/track.png>"]'), ['HTML is not allowed', 'external URLs are not allowed']);
+});
+
+test('mermaid: safe diagrams pass, including arrows that contain < and >', () => {
+  assert.deepEqual(mermaidProblems([...SAFE, '  A --> B', '  B <--> C', '  C -.-> D', '  D ==> E', '  E -->|yes| F'].join('\n')), []);
+  assert.deepEqual(checkAccessibility(mm(...SAFE, '  A --> B')), []);
+  for (const k of ['securityLevel', 'themeCSS', 'themeVariables', 'dompurifyConfig', 'htmlLabels', 'flowchart']) assert.ok(MERMAID_SECURE.includes(k), k);
+});
+
+test('mermaid: every diagram in the real articles still passes the checks', () => {
+  const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
+  const { errors, content } = loadContent(root);
+  assert.deepEqual(errors.filter((e) => /mermaid/.test(e)), []);
+  const withDiagrams = content.articles.filter((a) => a.body.includes('```mermaid'));
+  assert.ok(withDiagrams.length >= 6, 'sample content has diagrams');
+  for (const a of withDiagrams) assert.deepEqual(checkAccessibility(a.body).filter((e) => /mermaid/.test(e)), [], a.fm.slug);
+});

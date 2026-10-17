@@ -3,7 +3,9 @@ import assert from 'node:assert/strict';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { loadContent, buildOutputs, SITE_URL } from '../scripts/lib.js';
-import { buildSite, renderInline, renderBlocks, esc } from '../scripts/site.js';
+import { buildSite, renderInline, renderBlocks, esc, mermaidAcc } from '../scripts/site.js';
+import { STRINGS, t, tn } from '../web/assets/i18n.js';
+import { questionState } from '../web/assets/quiz-check.js';
 import { lessonPath, expandTopics, pathLanguages } from '../web/assets/lesson-path.js';
 
 const REPO = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -197,7 +199,7 @@ test('renderer: media images, pipe tables, details and mermaid blocks', () => {
   assert.match(table, /<td><em>Austria<\/em><\/td><td>9<\/td><\/tr><\/tbody><\/table><\/div>$/);
   assert.equal(renderBlocks('| not | a table |', ctx), '<p>| not | a table |</p>', 'a pipe row without a separator stays a paragraph');
   assert.equal(renderBlocks('<details><summary>Description</summary>\n\n- one\n- two\n</details>', ctx), '<details><summary>Description</summary><ul><li>one</li><li>two</li></ul></details>');
-  assert.equal(renderBlocks('```mermaid\nflowchart LR\n  A --> B\n```', ctx), '<pre class="mermaid"><code>flowchart LR\n  A --&gt; B</code></pre>');
+  assert.equal(renderBlocks('```mermaid\nflowchart LR\n  A --> B\n```', ctx), '<figure class="diagram"><pre class="mermaid" data-mermaid><code>flowchart LR\n  A --&gt; B</code></pre></figure>');
 });
 
 test('a wikilink in image alt text stays plain text (review #9.4)', () => {
@@ -205,4 +207,71 @@ test('a wikilink in image alt text stays plain text (review #9.4)', () => {
   assert.equal(renderInline('![Map of [[bela-krajina-dialects|Bela Krajina]] and [[photosynthesis]]](media/a/map.png)', ctx), '<img src="../media/a/map.png" alt="Map of Bela Krajina and photosynthesis" loading="lazy">');
   assert.ok(!renderInline('![x [[a#b|c]]](media/a/m.png) and [[d]]', ctx).includes('alt="x <a'), 'no <a> inside alt');
   assert.match(renderInline('![x](media/a/m.png) see [[d]]', ctx), /alt="x" loading="lazy"> see <a href="\.\.\/a\/d\.html">d<\/a>/);
+});
+
+test('mermaid: accTitle/accDescr (line and block) become the no-JS caption; source is kept and escaped', () => {
+  assert.deepEqual(mermaidAcc(['flowchart LR', '  accTitle: Review flow', '  accDescr: Draft goes to review.']), { title: 'Review flow', descr: 'Draft goes to review.' });
+  assert.deepEqual(mermaidAcc(['flowchart LR', '  accTitle: T', '  accDescr {', '    Line one.', '    Line two.', '  }', '  A --> B']), { title: 'T', descr: 'Line one. Line two.' });
+  const html = renderBlocks('```mermaid\nflowchart LR\n  accTitle: A <b>\n  accDescr: Goes to B.\n  A --> B\n```', { base: '../', titleOf: (x) => x, lang: 'sl' });
+  assert.match(html, /^<figure class="diagram"><pre class="mermaid" data-mermaid><code>flowchart LR\n {2}accTitle: A &lt;b&gt;\n {2}accDescr: Goes to B\.\n {2}A --&gt; B<\/code><\/pre>/);
+  assert.match(html, /<figcaption><strong>Diagram: A &lt;b&gt;\.<\/strong> Goes to B\.<\/figcaption><\/figure>$/);
+});
+
+test('mermaid: self-hosted build is emitted and loaded only on pages with a diagram', () => {
+  assert.ok(site['assets/vendor/mermaid.min.js'].length > 100000, 'vendored mermaid');
+  assert.ok(site['assets/vendor/mermaid.LICENSE.txt'].includes('MIT'));
+  assert.match(site['assets/diagram.js'], /vendor\/mermaid\.min\.js/);
+  const withDiagram = site['a/belokranjska-narecja.html'];
+  assert.match(withDiagram, /<script type="module" src="\.\.\/assets\/diagram\.js"><\/script>/);
+  assert.match(withDiagram, /<pre class="mermaid" data-mermaid>[\s\S]*accTitle: Dolenjska narečna skupina[\s\S]*<figcaption><strong>Diagram: Dolenjska narečna skupina\.<\/strong> Na karti/);
+  assert.ok(!site['a/photosynthesis.html'].includes('diagram.js'), 'no loader without a diagram');
+  for (const [f, html] of Object.entries(site)) if (f.endsWith('.html')) assert.ok(!/cdn|jsdelivr|unpkg/i.test(html.match(/<script[^>]*>/g)?.join('') || ''), `${f}: no CDN script`);
+});
+
+test('i18n: en and sl tables have the same keys; Slovenian plurals; fallback to English', () => {
+  assert.deepEqual(Object.keys(STRINGS.sl).sort(), Object.keys(STRINGS.en).sort());
+  assert.deepEqual([1, 2, 3, 4, 5, 101].map((n) => tn('sl', 'articles', n)), ['1 članek', '2 članka', '3 članki', '4 članki', '5 člankov', '101 članek']);
+  assert.equal(tn('en', 'questions', 1), '1 question');
+  assert.equal(t('de', 'checkAnswers'), 'Check answers');
+  assert.equal(t('sl', 'score', { right: 1, total: 2 }), 'Pravilni odgovori: 1 od 2.');
+  assert.equal(questionState({ type: 'single', answer: 0 }, ['0'], 'sl').text, '✓ Pravilno.');
+  assert.equal(questionState({ type: 'single', answer: 0 }, ['1'], 'sl').text, '✗ Ni pravilno. Odgovor je spodaj.');
+  assert.equal(questionState({ type: 'single', answer: 0 }, [], 'sl').text, '✗ Brez odgovora. Odgovor je spodaj.');
+  assert.equal(questionState({ type: 'single', answer: 0 }, ['0']).text, '✓ Correct.');
+});
+
+test('SL quiz page is fully Slovenian, with and without JS', () => {
+  const html = site['quiz/belokranjska-narecja.html'];
+  for (const s of ['<html lang="sl">', 'data-lang="sl"', '>Preveri odgovore<', '>Začni znova<', '<summary>Pokaži odgovor</summary>', '<strong>Odgovor:</strong>', '>Domov<', '>Preskoči na vsebino<', 'Kviz: ', 'Pod vsakim vprašanjem']) assert.ok(html.includes(s), s);
+  for (const s of ['>Check answers<', '>Show answer<', '>Home<', 'Skip to content', 'Source on GitHub', 'Questions about']) assert.ok(!html.includes(s), s);
+  const tf = Object.entries(site).filter(([f, h]) => f.startsWith('quiz/') && h.includes('<html lang="sl">') && h.includes('value="true"'));
+  for (const [, h] of tf) assert.ok(h.includes('>Drži</label>') && h.includes('>Ne drži</label>'), 'SL true/false labels');
+  assert.match(site['quiz/photosynthesis.html'], />Check answers<.*>Start again</);
+});
+
+test('SL article and path chrome; English pages unchanged; English topic text marked lang="en"', () => {
+  const sl = site['a/belokranjska-narecja.html'];
+  for (const s of ['<strong>Na kratko:</strong>', '<dt>Avtorji</dt>', '<dt>Stanje</dt>', 'aria-label="Vir 1"', '>Povezave na ta članek<', '· Licenca CC-BY-SA-4.0', '<span lang="en">']) assert.ok(sl.includes(s), s);
+  assert.ok(!sl.includes('In short:') && !sl.includes('<header class="site" lang="en">'));
+  const en = site['a/bela-krajina-dialects.html'];
+  for (const s of ['<strong>In short:</strong>', 'Skip to content', 'aria-label="Source 1"', '>What links here<']) assert.ok(en.includes(s), s);
+  const p = site['paths/sl/index.html'];
+  assert.match(p, /<html lang="sl">/);
+  assert.match(p, /<h1>Učne poti \(Slovenščina\)<\/h1>/);
+  assert.match(p, /<a href="[a-z-]+\.html"><span lang="en">/);
+  assert.match(p, /· \d+ člank/);
+  assert.match(site['paths/sl/linguistics.html'], /<h2>Vrstni red branja<\/h2>/);
+  assert.match(site['paths/en/index.html'], /<html lang="en">[\s\S]*<h1>Lesson paths \(English\)<\/h1>/);
+});
+
+test('diagram.js is chosen from the rendered HTML, so a fence written "``` mermaid" still loads it', () => {
+  const c = loadContent(REPO).content;
+  const a = c.bySlug.get('photosynthesis');
+  const extra = '\n\n``` mermaid\nflowchart LR\n  accTitle: T\n  accDescr: D.\n  A --> B\n```\n';
+  a.body += extra;
+  a.sections.find((x) => x.anchor && x.anchor !== 'sources').text += extra; // Sources is rendered from frontmatter
+  const s2 = buildSite(c, buildOutputs(c));
+  assert.match(s2['a/photosynthesis.html'], /data-mermaid/);
+  assert.match(s2['a/photosynthesis.html'], /assets\/diagram\.js/);
+  assert.ok(!site['a/photosynthesis.html'].includes('diagram.js'));
 });
