@@ -194,3 +194,39 @@ test('snippet returns a window around the first matching token', () => {
   const s = snippet(text, 'chlorophyl');
   assert.ok(s.includes('chlorophyl'));
 });
+
+const metlikaFixture = () => prepareIndex([
+  entry('m', { anchor: null, title: 'Bela Krajina', ai_assisted: true, text: 'intro' }),
+  entry('m', { anchor: 'south', title: 'Bela Krajina', heading: 'South', text: 'around metlika the dialect' }),
+  entry('x', { anchor: null, title: 'Other', ai_assisted: true }),
+]);
+
+test('search: multi-word query borrows #top metadata for a body section (ai metlika)', () => {
+  assert.deepEqual(search(metlikaFixture(), 'ai metlika').map((e) => [e.slug, e.anchor]), [['m', 'south']]);
+});
+
+test('search: borrowed match returns one entry per article', () => {
+  const index = prepareIndex([
+    entry('m', { anchor: null, title: 'T', ai_assisted: true }),
+    entry('m', { anchor: 'a', title: 'T', text: 'metlika one' }),
+    entry('m', { anchor: 'b', title: 'T', text: 'metlika two' }),
+  ]);
+  assert.equal(search(index, 'ai metlika').length, 1);
+});
+
+test('search: single-word metadata query still hits only #top entries', () => {
+  assert.deepEqual(search(metlikaFixture(), 'ai').map((e) => e.anchor), [null, null]);
+});
+
+test('search: borrowing never crosses articles', () => {
+  const index = prepareIndex([
+    entry('a', { anchor: null, title: 'A', ai_assisted: false }),
+    entry('a', { anchor: 's', title: 'A', text: 'metlika' }),
+    entry('b', { anchor: null, title: 'B', ai_assisted: true }),
+  ]);
+  assert.deepEqual(search(index, 'ai metlika'), []);
+});
+
+test('search: borrowing respects opts.lang', () => {
+  assert.deepEqual(search(metlikaFixture(), 'ai metlika', { lang: 'sl' }), []);
+});

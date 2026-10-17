@@ -3,3 +3,7 @@ title: Geography
 description: Places, regions and how territories are divided and governed.
 parent: null
 related: [slovenia]
+i18n:
+  sl:
+    title: Geografija
+    description: Kraji, regije ter kako so ozemlja razdeljena in upravljana.

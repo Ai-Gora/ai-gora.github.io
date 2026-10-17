@@ -68,7 +68,7 @@ Najvišja raven je organizem, torej celoten živ človek.[^2]
 Diagram kaže, kako vsaka raven gradi na prejšnji.[^2]
 
 ```mermaid
-flowchart LR
+flowchart TD
   accTitle: Šest ravni organiziranosti človeškega telesa
   accDescr: Šest ravni od preproste do zapletene. Kemijska raven, celice, tkiva, organi, organski sistemi in organizem.
   A[Kemijska raven] --> B[Celice] --> C[Tkiva] --> D[Organi] --> E[Organski sistemi] --> F[Organizem]

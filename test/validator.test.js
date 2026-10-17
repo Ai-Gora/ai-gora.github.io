@@ -247,3 +247,18 @@ test('the Quiz section body is a fixed form: pointer line, optional fixed phrase
   const sl = 'articles/geography/upravna-delitev-drzav-eu.md';
   hasError(fixture((d) => edit(d, sl, (t) => t.replace('Spletno mesto ga prikaže na strani s kvizom za ta članek.', 'Slovenija ima 300 občin.'))).errors, /upravna-delitev-drzav-eu\.md: .*found: "Slovenija ima 300 občin\."/);
 });
+
+test('topic i18n: optional, keyed by a two-letter code other than en, title required, no extra keys', () => {
+  assert.deepEqual(fixture().errors, []);
+  const bio = 'topics/biology.yaml';
+  for (const [bad, re] of [
+    ['i18n:\n  en:\n    title: Biology\n', /topic schema/],
+    ['i18n:\n  slovene:\n    title: Biologija\n', /topic schema/],
+    ['i18n:\n  sl:\n    description: Veda.\n', /topic schema/],
+    ['i18n:\n  sl:\n    title: Biologija\n    summary: x\n', /topic schema/],
+    ['i18n:\n  sl:\n    title: ""\n', /topic schema/],
+  ]) {
+    const { errors } = fixture((d) => edit(d, bio, (t) => { const n = t.replace(/i18n:[\s\S]*$/, bad); assert.notEqual(n, t); return n; }));
+    hasError(errors, re);
+  }
+});

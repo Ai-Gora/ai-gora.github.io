@@ -3,3 +3,7 @@ title: Slovenia
 description: The country, its regions, people and languages.
 parent: null
 related: [linguistics, history]
+i18n:
+  sl:
+    title: Slovenija
+    description: Država, njene pokrajine, ljudje in jeziki.

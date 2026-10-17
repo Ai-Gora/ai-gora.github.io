@@ -31,6 +31,9 @@ export const STRINGS = {
     pathsTitle: 'Lesson paths', pathsIntro: 'Choose an interest to get an ordered reading list. Prerequisites come first, then articles from intro to deep.',
     pathTitle: 'Lesson path: {title}', readingOrder: 'Reading order', prerequisite: 'prerequisite', sections: 'Sections',
     noPathArticles: 'No articles for this interest yet.', relatedInterests: 'Related interests', quiz: 'Quiz',
+    articleStatus: 'Article status', metaChecked: 'Checked', metaNextReview: 'Next review', aiAssistedShort: 'AI-assisted',
+    dueLabel: 'Review due:', dueText: 'this article was due for review on {date}.',
+    stepsDone: '{count} of {total} steps done', continueTo: 'Continue: {title}', stepDone: '(done)',
   },
   sl: {
     skip: 'Preskoči na vsebino', navSite: 'Spletno mesto', navHome: 'Domov', navSearch: 'Iskanje', navPaths: 'Učne poti', navQuizzes: 'Kvizi',
@@ -56,6 +59,9 @@ export const STRINGS = {
     pathsTitle: 'Učne poti', pathsIntro: 'Izberite področje in dobite urejen seznam za branje. Najprej so predznanja, nato članki od uvodnih do poglobljenih.',
     pathTitle: 'Učna pot: {title}', readingOrder: 'Vrstni red branja', prerequisite: 'predznanje', sections: 'Razdelki',
     noPathArticles: 'Za to področje še ni člankov.', relatedInterests: 'Sorodna področja', quiz: 'Kviz',
+    articleStatus: 'Stanje članka', metaChecked: 'Preverjeno', metaNextReview: 'Naslednji pregled', aiAssistedShort: 's pomočjo UI',
+    dueLabel: 'Pregled zapadel:', dueText: 'ta članek bi moral biti ponovno pregledan {date}.',
+    stepsDone: 'Opravljeni koraki: {count} od {total}', continueTo: 'Nadaljuj: {title}', stepDone: '(opravljeno)',
   },
 };
 

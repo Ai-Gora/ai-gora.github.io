@@ -438,3 +438,67 @@ test('mermaid: plain words and arrows still pass the stricter guard', () => {
     assert.deepEqual(mermaidProblems([...SAFE, `  A["${label}"] --> B`, '  B <--> C', '  C ==> D', '  D -->|yes| E'].join('\n')), [], label);
   }
 });
+
+// Sentry follow-up (PR #12): ordinary labels must not be rejected; quoted img keys must be.
+test('mermaid: ordinary labels with "Data:", "Call", "//", "click" or "HTTP:" pass', () => {
+  for (const label of ['Data: 3 rows', 'Data:', 'DATA:', 'Call centre', 'Call: 112', 'A // B', 'x//y', 'click here', 'href text', 'HTTP: GET', 'javascript: is a language', 'file: report', 'Ratio 3:4']) {
+    const src = [...SAFE, `  A["${label}"] --> B`, `  B[${label}] --> C`].join('\n');
+    assert.deepEqual(mermaidProblems(src), [], label);
+    assert.deepEqual(checkAccessibility(mm(src)), [], label);
+  }
+});
+
+test('mermaid: quoted img keys and click/call/href statements are rejected', () => {
+  const img = 'img: shapes are not allowed';
+  const click = 'click/href statements are not allowed (diagrams are not interactive)';
+  for (const [line, reason] of [
+    ['  A@{ "img": "/a.png" }', img], ["  A@{ 'img' : '/a.png' }", img], ['  A@{ "IMG":"/a.png" }', img],
+    ['  click A "x.html"', click], ['\tclick A call f()', click], ['  A --> B; click A href "#x"', click],
+    ['  subgraph S\n  end; click A "y"', click], ['  call f()', click], ['  href "y"', click],
+  ]) {
+    const src = [...SAFE, '  A --> B', line].join('\n');
+    assert.ok(mermaidProblems(src).includes(reason), `${JSON.stringify(line)} → ${JSON.stringify(mermaidProblems(src))}`);
+    assert.ok(checkAccessibility(mm(src)).includes(`line 1: mermaid diagram 1: ${reason} (STYLE V8)`), JSON.stringify(line));
+  }
+});
+
+// Review #8 round 1 (Sentry): YAML in shape data rebuilt an img key and split a URL over lines.
+test('mermaid: shape-data YAML tricks and line-split URLs are rejected (review #8)', () => {
+  const IMG = 'img: shapes are not allowed';
+  const YAML = 'YAML anchors, aliases, tags and complex keys are not allowed in shape data';
+  const URL = 'external URLs are not allowed';
+  const cases = [
+    // the two payloads from the review
+    [['  C@{', '  q: &k img', '  *k : |-', '    /', '    /ext.test:8899/c1.png', '  }'], [IMG, YAML, URL]],
+    [['  C@{', '  ? img # note', '  : |-', '    /', '    /ext.test:8899/c2.png', '  }'], [IMG, YAML, URL]],
+    // variants
+    [['  C@{ q: &k IMG, *k : "/a.png" }'], [IMG, YAML]],
+    [['  C@{', '  q: &k label', '  *k : x', '  }'], [YAML]],
+    [['  C@{ ? label : x }'], [YAML]],
+    [['  C@{ !!str k: v }'], [YAML]],
+    [['  C@{ label: |-', '    /', '    /ext.test/x.png', '  }'], [URL]],
+    [['  C@{ label: |-', '    ht', '    tps:/', '    /host/a.png', '  }'], [URL]],
+    [['  C@{ label: "java', '    script:alert(1)" }'], [URL]],
+    [['  C@{ label: "data:', '    image/png;base64,AAAA" }'], ['data:/javascript: URLs are not allowed']],
+    // a single-quoted "}" does not end the block early for the guard (Mermaid only honours double quotes)
+    [['  C@{ label: \'a"b\' }', '  q: &k img', '  *k : "}"'], [IMG, YAML]],
+    // non-blocking items 2 and 3
+    [['  A["data: image/png;base64,AAAA"]'], ['data:/javascript: URLs are not allowed']],
+  ];
+  for (const [lines, reasons] of cases) {
+    const got = mermaidProblems([...SAFE, '  A --> B', ...lines].join('\n'));
+    for (const r of reasons) assert.ok(got.includes(r), `${JSON.stringify(lines)} → ${JSON.stringify(got)}`);
+  }
+  for (const src of ['classDiagram\n  class A\n  callback A "f"', 'classDiagram\n  class A\n  link A "/x"', 'sequenceDiagram\n  participant X\n  links X: {"a": "/b"}', 'sequenceDiagram\n  participant X\n  link X: Docs @ /docs']) {
+    assert.ok(mermaidProblems(src).includes('click/href statements are not allowed (diagrams are not interactive)'), src);
+  }
+});
+
+test('mermaid: ordinary labels and plain shape data still pass after the review #8 tightening', () => {
+  const ok = [
+    ['  D["Data: Eurostat"] --> E["Call the clinic"] --> F["Ljubljana // Maribor"]', '  linkStyle 0 stroke-width:2px'],
+    ['  C@{ shape: rounded, label: "Data: Eurostat" }', '  C --> D["Images and data"]'],
+    ['  C@{ shape: rect }', '  D["A & B, 3 * 4?"]'],
+  ];
+  for (const lines of ok) assert.deepEqual(mermaidProblems([...SAFE, '  A --> B', ...lines].join('\n')), [], lines.join(' | '));
+});
