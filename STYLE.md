@@ -43,7 +43,7 @@ How to write, structure and illustrate Aigora articles so both people and machin
    2. `## Key insights` (five at most)
    3. topic sections
    4. `## Key claims` (one claim per line, each with a footnote)
-   5. `## Quiz` (a YAML block)
+   5. `## Quiz` (`## Kviz` in Slovenian): only the fixed pointer line to `quizzes/<slug>.yaml`, optionally followed by the fixed site phrase. The quiz itself lives in the YAML file. CI rejects any other text in this section.
    6. `## Open questions`
    7. `## Sources`
 3. **Headings.** Use short noun phrases in sentence case, without numbering or end punctuation. Don't skip heading levels.
@@ -62,17 +62,16 @@ How to write, structure and illustrate Aigora articles so both people and machin
      Draft --> Review -->|pass| Published
      Review -->|fail| Draft
    ```
-3. **Charts come from data in the repo.** Store each chart as `media/<slug>/<chart>/` containing:
+3. **Charts come from data in the repo.** Store each chart's sources in `charts/<slug>/<chart>/`:
    - `data.csv` (or `.json`)
-   - `chart.vl.json`, a Vega-Lite spec that points to the data with `url`, or a script in `scripts/charts/`
-   - `chart.svg`, the generated output
+   - `chart.vl.json`, a Vega-Lite spec that points to the data with `url`
    - `README.md` with a data source citation and a long description
 
-   CI regenerates the SVG and fails if it differs from the committed file. Don't use hand-edited charts or screenshots of charts.
+   `npm run charts` renders the spec and writes the published raster `media/<slug>/<chart>.png`, its sidecar, and `render.json` (hashes). CI fails if the PNG is out of date with the spec and data, or was edited by hand. Don't use hand-edited charts or screenshots of charts.
 4. **Alt text, required.** Every image has alt text that gives its *purpose* in 125 characters or fewer. Decorative images use empty alt (`![]()`) and are rare.
 5. **Long description for complex images.** Charts, diagrams, maps and annotated photos also need a long description that gives the essential information, as a list or a table of the key values. Put it in the chart `README.md`, or directly after the image under `<details><summary>Description</summary>`.
 6. **Captions.** Put a caption under each figure in the form `*Figure n. What it shows, and the key takeaway. Source/credit.*` The caption must not simply repeat the alt text.
-7. **Formats.** Use SVG for diagrams and charts. Use WebP, PNG or JPEG for photos, with the long edge at 1600 px or less. Don't put text inside raster images.
+7. **Formats.** Publish rasters only: WebP, PNG or JPEG (GIF is accepted), with the long edge at 1600 px or less for photos. Never publish SVG: SVG can carry scripts and external references, so convert it to a raster at a size where labels stay legible. Use Mermaid for diagrams. Avoid text inside photos.
 
 ## Images & licensing (L)
 

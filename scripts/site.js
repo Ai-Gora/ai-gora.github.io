@@ -23,7 +23,7 @@ export function renderInline(text, ctx) {
     // Only repo media (STYLE V4/L5), rewritten against the page base; anything else is dropped.
     s = s.replace(/!\[((?:\[\[[^\]]*\]\]|[^\]])*)\]\(([^)\s]+)\)/g, (_m, alt, src) => {
       const plain = alt.replace(/\[\[([^\]|#]+)(?:#[^\]|]+)?(?:\|([^\]]+))?\]\]/g, (_w, slug, txt) => (txt || slug).trim());
-      const ok = /^media\/[A-Za-z0-9._/-]+\.(svg|png|jpe?g|webp|gif)$/i.test(src) && !src.split('/').includes('..');
+      const ok = /^media\/[A-Za-z0-9._/-]+\.(png|jpe?g|webp|gif)$/i.test(src) && !src.split('/').includes('..');
       return ok ? `<img src="${ctx.base}${src}" alt="${plain}" loading="lazy">` : '';
     });
     s = s.replace(/\[\[([^\]|#]+)(?:#([^\]|]+))?(?:\|([^\]]+))?\]\]/g, (_m, slug, anchor, txt) => {

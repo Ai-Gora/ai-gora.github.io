@@ -3,7 +3,24 @@ import fs from 'node:fs';
 import path from 'node:path';
 import yaml from 'js-yaml';
 
-export const IMAGE_EXT = ['.svg', '.png', '.jpg', '.jpeg', '.webp', '.gif'];
+/** The only file types published from media/ (STYLE V7). SVG is never published: convert it to a raster. */
+export const IMAGE_EXT = ['.webp', '.png', '.jpg', '.jpeg', '.gif'];
+const MAGIC = {
+  '.png': (b) => b.length >= 8 && b.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])),
+  '.jpg': (b) => b.length >= 3 && b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff,
+  '.webp': (b) => b.length >= 12 && b.toString('latin1', 0, 4) === 'RIFF' && b.toString('latin1', 8, 12) === 'WEBP',
+  '.gif': (b) => b.length >= 6 && /^GIF8[79]a$/.test(b.toString('latin1', 0, 6)),
+};
+MAGIC['.jpeg'] = MAGIC['.jpg'];
+
+/** Problem string if a published media file's type is not allowed or its magic bytes do not match its extension, else null. */
+export function mediaTypeProblem(f, buf = null) {
+  const ext = path.extname(f).toLowerCase();
+  if (!IMAGE_EXT.includes(ext)) return `file type ${ext || '(none)'} is not published (allowed: ${IMAGE_EXT.join(', ')}; SVG must be converted to a raster, STYLE V7)`;
+  const b = buf || fs.readFileSync(f);
+  if (!MAGIC[ext](b)) return `content does not match its ${ext} extension (magic bytes)`;
+  return null;
+}
 const ALLOWED = [/^CC0(-1\.0)?$/, /^(PD|PDM|PUBLIC-DOMAIN)$/, /^NASA$/, /^CC-BY(-\d\.\d)?$/, /^CC-BY-SA(-\d\.\d)?$/];
 
 export function checkLicense(s) {
@@ -48,76 +65,28 @@ export function mediaPathProblem(root, f) {
   return null;
 }
 
-/** SVG content that must never be published: scripts, event handlers, foreignObject, javascript: and external references. */
-export function svgProblems(text) {
-  const rules = [
-    [/<script\b/i, 'contains <script>'],
-    [/<[^>]*\son[a-z]+\s*=/i, 'contains an on* event attribute'],
-    [/<foreignObject\b/i, 'contains <foreignObject>'],
-    [/javascript\s*:/i, 'contains a javascript: URL'],
-    [/\bhref\s*=\s*["']\s*(https?:|\/\/)/i, 'references an external URL in href/xlink:href'],
-    [/\bhref\s*=\s*["']\s*data:(?!image\/(png|jpe?g|gif|webp)[;,])/i, 'embeds a non-raster data: URL in href/xlink:href'],
-    [/\bhref\s*=\s*["'][^"']*&#/i, 'uses character references inside href'],
-    [/url\(\s*["']?\s*(https?:|\/\/)/i, 'references an external url()'],
-    [/@import\b/i, 'contains @import'],
-  ];
-  return rules.filter(([re]) => re.test(text)).map(([, msg]) => msg);
-}
-
-/** Data urls a Vega-Lite spec loads: every `data: { url }` (top level, layers, lookups). */
-export function specDataUrls(spec) {
-  const urls = [];
-  (function find(o) {
-    if (!o || typeof o !== 'object') return;
-    for (const [k, v] of Object.entries(o)) {
-      if (k === 'data' && v && typeof v === 'object' && typeof v.url === 'string') urls.push(v.url);
-      find(v);
-    }
-  })(spec);
-  return urls;
-}
-
-/**
- * Chart folders are credited in their README.md (STYLE V3), but only these files are exempt from sidecars:
- * chart.vl.json, chart.svg, README.md and the in-folder data files the spec references. Anything else (a photo) needs one.
- */
-function chartExemptFiles(files) {
-  const exempt = new Set();
-  for (const spec of files.filter((f) => path.basename(f) === 'chart.vl.json')) {
-    const dir = path.dirname(spec);
-    for (const n of ['chart.vl.json', 'chart.svg', 'README.md']) exempt.add(path.join(dir, n));
-    let urls = [];
-    try { urls = specDataUrls(JSON.parse(fs.readFileSync(spec, 'utf8'))); } catch { /* invalid spec: reported by the chart build */ }
-    for (const u of urls) {
-      if (/^[a-z][a-z0-9+.-]*:/i.test(u) || u.startsWith('/') || u.startsWith('\\')) continue;
-      const p = path.resolve(dir, u);
-      const r = path.relative(dir, p);
-      if (r && !r.startsWith('..') && !path.isAbsolute(r)) exempt.add(p);
-    }
-  }
-  return exempt;
-}
-
 export function checkMediaDir(root) {
   const errs = [];
   const rel = (p) => path.relative(root, p).split(path.sep).join('/');
   const files = walk(path.join(root, 'media'));
-  const exempt = chartExemptFiles(files);
   const unsafe = new Set();
   for (const f of files) {
     const problem = mediaPathProblem(root, f);
-    if (problem) { errs.push(`${rel(f)}: ${problem}`); unsafe.add(f); continue; }
-    if (path.extname(f).toLowerCase() === '.svg') for (const p of svgProblems(fs.readFileSync(f, 'utf8'))) errs.push(`${rel(f)}: unsafe SVG, ${p}`);
+    if (problem) { errs.push(`${rel(f)}: ${problem}`); unsafe.add(f); }
   }
   for (const f of files) {
     if (unsafe.has(f)) continue;
     const name = path.basename(f);
-    if (name.endsWith('.license.yaml') || name === '.gitkeep') continue;
-    if (exempt.has(f)) continue;
+    if (name === '.gitkeep') continue;
+    if (name.endsWith('.license.yaml')) {
+      if (!files.includes(f.slice(0, -'.license.yaml'.length))) errs.push(`${rel(f)}: sidecar for a file that does not exist`);
+      continue;
+    }
+    const typeProblem = mediaTypeProblem(f);
+    if (typeProblem) { errs.push(`${rel(f)}: ${typeProblem}`); continue; }
     const side = `${f}.license.yaml`;
-    const kind = IMAGE_EXT.includes(path.extname(f).toLowerCase()) ? 'image' : 'media file';
     if (unsafe.has(side)) continue;
-    if (!fs.existsSync(side)) { errs.push(`${rel(f)}: ${kind} has no licence sidecar ${path.basename(side)}`); continue; }
+    if (!fs.existsSync(side)) { errs.push(`${rel(f)}: image has no licence sidecar ${path.basename(side)}`); continue; }
     let s;
     try { s = yaml.load(fs.readFileSync(side, 'utf8'), { schema: yaml.JSON_SCHEMA }); } catch (e) { errs.push(`${rel(side)}: YAML parse error: ${e.reason || e.message}`); continue; }
     for (const e of checkLicense(s)) errs.push(`${rel(side)}: ${e}`);

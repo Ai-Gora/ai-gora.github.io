@@ -22,7 +22,7 @@ Everything happens through pull requests. Git history is the revision history; d
 
 ## Media
 
-Put files under `media/<slug>/` and add `<file>.license.yaml` with `file, title, author, source_url, license` (STYLE L5). Allowed licences: CC0/PD, CC BY, CC BY-SA, NASA. Every image needs alt text and every Mermaid diagram needs `accTitle` and `accDescr` (STYLE V2, V4). Charts: `media/<slug>/<chart>/` with `data.csv`, `chart.vl.json`, `README.md`; run `npm run charts` to regenerate `chart.svg`. Sentences over 25 words produce warnings (STYLE W2).
+Put files under `media/<slug>/` and add `<file>.license.yaml` with `file, title, author, source_url, license` (STYLE L5). Allowed licences: CC0/PD, CC BY, CC BY-SA, NASA. Every image needs alt text and every Mermaid diagram needs `accTitle` and `accDescr` (STYLE V2, V4). Only raster images are published (`.webp`, `.png`, `.jpg`/`.jpeg`, `.gif`); convert any SVG to a raster first. Charts: sources in `charts/<slug>/<chart>/` with `data.csv`, `chart.vl.json`, `README.md`; run `npm run charts` to render `media/<slug>/<chart>.png` and `render.json`. Sentences over 25 words produce warnings (STYLE W2).
 
 ## Before opening a PR
 

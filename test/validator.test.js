@@ -83,7 +83,7 @@ test('unknown topic fails', () => {
 });
 
 test('media without licence sidecar fails', () => {
-  const { errors } = fixture((d) => { fs.mkdirSync(path.join(d, 'media/photosynthesis'), { recursive: true }); fs.writeFileSync(path.join(d, 'media/photosynthesis/leaf.png'), 'x'); });
+  const { errors } = fixture((d) => { fs.mkdirSync(path.join(d, 'media/photosynthesis'), { recursive: true }); fs.writeFileSync(path.join(d, 'media/photosynthesis/leaf.png'), Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])); });
   hasError(errors, /image has no licence sidecar leaf.png.license.yaml/);
 });
 
@@ -205,7 +205,7 @@ test('article JSON output escapes < and keeps jsonld.headline', () => {
 });
 
 test('a ## Quiz section that points to the quiz file needs no citation (STYLE S2)', () => {
-  const { errors } = fixture((d) => edit(d, PHOTO, (t) => t.replace('## Sources {#sources}', '## Quiz {#quiz}\n\nTry the [[photosynthesis|quiz]].\n\n## Sources {#sources}')));
+  const { errors } = fixture((d) => edit(d, PHOTO, (t) => t.replace('## Sources {#sources}', '## Quiz {#quiz}\n\nThe quiz for this article is in `quizzes/photosynthesis.yaml`.\nThe site shows it on the quiz page for this article.\n\n## Sources {#sources}')));
   assert.deepEqual(errors, []);
 });
 
@@ -215,22 +215,35 @@ test('article images must be existing media/ files', () => {
   hasError(errors, /image https:\/\/example\.com\/x\.png must be a media\/ path/);
 });
 
-test('committed media images are copied to the site, chart.svg is left to the chart build', () => {
+test('committed raster media are copied to the site; sidecars are not published', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'aigora-media-'));
-  fs.mkdirSync(path.join(dir, 'media/a/c'), { recursive: true });
-  fs.writeFileSync(path.join(dir, 'media/a/photo.webp'), Buffer.from([1, 2, 3]));
+  fs.mkdirSync(path.join(dir, 'media/a'), { recursive: true });
+  fs.writeFileSync(path.join(dir, 'media/a/photo.webp'), Buffer.concat([Buffer.from('RIFF'), Buffer.alloc(4), Buffer.from('WEBPVP8 ')]));
   fs.writeFileSync(path.join(dir, 'media/a/photo.webp.license.yaml'), 'file: photo.webp\n');
-  fs.writeFileSync(path.join(dir, 'media/a/c/chart.svg'), '<svg/>');
   const out = mediaOutputs(dir);
   assert.deepEqual(Object.keys(out), ['media/a/photo.webp']);
   assert.ok(Buffer.isBuffer(out['media/a/photo.webp']));
 });
 
+
 test('only a real Quiz pointer is exempt from citations (review #9.3)', () => {
   const add = (sec) => (d) => edit(d, PHOTO, (t) => { const n = t.replace('## Sources {#sources}', `${sec}\n\n## Sources {#sources}`); assert.notEqual(n, t); return n; });
   hasError(fixture(add('## Fun facts {#quiz}\n\nPlants are green.')).errors, /section '#quiz' is not a valid quiz pointer: heading must be exactly 'Quiz'/);
-  hasError(fixture(add('## Quiz {#quiz}\n\nSee the quiz.\n\n### More {#more}\n\nUncited claim.')).errors, /not a valid quiz pointer: it must not have subsections/);
-  hasError(fixture((d) => { add('## Quiz {#quiz}\n\nSee the quiz.')(d); fs.rmSync(path.join(d, 'quizzes/photosynthesis.yaml')); }).errors, /quizzes\/photosynthesis\.yaml does not exist/);
+  const ptr = '## Quiz {#quiz}\n\nThe quiz for this article is in `quizzes/photosynthesis.yaml`.';
+  hasError(fixture(add(`${ptr}\n\n### More {#more}\n\nUncited claim.`)).errors, /not a valid quiz pointer: it must not have subsections/);
+  hasError(fixture((d) => { add(ptr)(d); fs.rmSync(path.join(d, 'quizzes/photosynthesis.yaml')); }).errors, /quizzes\/photosynthesis\.yaml does not exist/);
   const sl = 'articles/geography/upravna-delitev-drzav-eu.md';
   hasError(fixture((d) => edit(d, sl, (t) => t.replace('## Kviz {#quiz}', '## Quiz {#quiz}'))).errors, /upravna-delitev-drzav-eu\.md: section '#quiz' is not a valid quiz pointer: heading must be exactly 'Kviz'/);
+});
+
+test('the Quiz section body is a fixed form: pointer line, optional fixed phrase, blank lines (review #9 round 2)', () => {
+  const add = (sec) => (d) => edit(d, PHOTO, (t) => { const n = t.replace('## Sources {#sources}', `${sec}\n\n## Sources {#sources}`); assert.notEqual(n, t); return n; });
+  const ptr = 'The quiz for this article is in `quizzes/photosynthesis.yaml`.';
+  assert.deepEqual(fixture(add(`## Quiz {#quiz}\n\n${ptr}`)).errors, [], 'pointer line alone is fine');
+  hasError(fixture(add(`## Quiz {#quiz}\n\n${ptr}\nPlants make 90% of all oxygen.`)).errors, /only the fixed quiz lines are allowed, found: "Plants make 90% of all oxygen\."/);
+  hasError(fixture(add('## Quiz {#quiz}\n\nThe site shows it on the quiz page for this article.')).errors, /it must contain the line: The quiz for this article is in `quizzes\/photosynthesis\.yaml`\./);
+  hasError(fixture(add('## Quiz {#quiz}\n\nThe quiz for this article is in `quizzes/printing-press.yaml`.')).errors, /it must contain the line/);
+  hasError(fixture(add(`## Quiz {#quiz}\n\n${ptr}\n\n- Light is needed.`)).errors, /found: "- Light is needed\."/);
+  const sl = 'articles/geography/upravna-delitev-drzav-eu.md';
+  hasError(fixture((d) => edit(d, sl, (t) => t.replace('Spletno mesto ga prikaže na strani s kvizom za ta članek.', 'Slovenija ima 300 občin.'))).errors, /upravna-delitev-drzav-eu\.md: .*found: "Slovenija ima 300 občin\."/);
 });

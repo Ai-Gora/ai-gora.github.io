@@ -1,11 +1,15 @@
-// STYLE V3: render media/<slug>/<chart>/chart.vl.json (Vega-Lite) to SVG server-side. No browser, no canvas.
+// STYLE V3: chart sources live in charts/<slug>/<chart>/ (chart.vl.json, data, README.md). They are rendered
+// server-side to SVG (vega, no browser), and `npm run charts` rasterises that SVG to the only published file,
+// media/<slug>/<chart>.png. SVG is never published (STYLE V7). render.json records the SVG and PNG hashes so CI can
+// check, without a rasteriser, that the committed PNG was made from the current spec and data.
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import * as vega from 'vega';
 import { compile } from 'vega-lite';
 
 export function findCharts(root) {
-  const media = path.join(root, 'media');
+  const media = path.join(root, 'charts');
   if (!fs.existsSync(media)) return [];
   const out = [];
   const walk = (d) => {
@@ -92,20 +96,64 @@ export async function renderChart(dir) {
   }
 }
 
-/** Returns { errors, outputs: { 'media/.../chart.svg': svg } }. With write=true, refreshes committed chart.svg files. */
+const CHART_DIR = /^charts\/([a-z0-9][a-z0-9-]*)\/([a-z0-9][a-z0-9-]*)$/;
+const sha256 = (b) => crypto.createHash('sha256').update(b).digest('hex');
+
+/** SVG string -> PNG Buffer at 2x, white background. Only `npm run charts` needs this; CI only checks hashes. */
+export async function rasterise(svg) {
+  const { Resvg } = await import('@resvg/resvg-js');
+  const font = { loadSystemFonts: true, defaultFontFamily: 'Liberation Sans', sansSerifFamily: 'Liberation Sans' };
+  return Buffer.from(new Resvg(svg, { fitTo: { mode: 'zoom', value: 2 }, background: 'white', font }).render().asPng());
+}
+
+const chartSidecar = (rel, png, spec, buf) => [
+  `file: ${path.basename(png)}`,
+  `title: ${JSON.stringify(typeof spec.title === 'string' ? spec.title : path.basename(rel))}`,
+  'author: Aigora contributors',
+  `source_url: https://github.com/Ai-Gora/ai-gora.github.io/tree/main/${rel}`,
+  'license: CC-BY-SA-4.0',
+  'license_url: https://creativecommons.org/licenses/by-sa/4.0/',
+  `modified: "rendered by npm run charts from ${rel}/chart.vl.json (Vega-Lite to SVG to PNG)"`,
+  'format: image/png',
+  `width: ${buf.readUInt32BE(16)}`,
+  `height: ${buf.readUInt32BE(20)}`,
+  'ai_generated: false',
+  `notes: Data source and long description are in ${rel}/README.md.`,
+  '',
+].join('\n');
+
+/**
+ * Returns { errors, count }. Checks that each chart renders and that charts/<slug>/<chart>/render.json matches the
+ * current SVG render and the committed media/<slug>/<chart>.png. With write=true, rasterises and refreshes both.
+ */
 export async function buildCharts(root, { write = false } = {}) {
   const errors = [];
-  const outputs = {};
+  let count = 0;
   for (const dir of findCharts(root)) {
     const rel = path.relative(root, dir).split(path.sep).join('/');
+    const m = CHART_DIR.exec(rel);
+    if (!m) { errors.push(`${rel}: chart folders must be charts/<slug>/<chart> (lowercase, digits, hyphens)`); continue; }
     if (!fs.existsSync(path.join(dir, 'README.md'))) errors.push(`${rel}: chart needs README.md with data source and long description (STYLE V3/V5)`);
     let svg;
     try { svg = await renderChart(dir); } catch (e) { errors.push(`${rel}: ${e.message}`); continue; }
-    outputs[`${rel}/chart.svg`] = svg;
-    const committed = path.join(dir, 'chart.svg');
-    if (write) fs.writeFileSync(committed, svg);
-    else if (!fs.existsSync(committed)) errors.push(`${rel}: chart.svg missing; run npm run charts`);
-    else if (fs.readFileSync(committed, 'utf8') !== svg) errors.push(`${rel}: chart.svg is out of date with chart.vl.json/data; run npm run charts`);
+    count++;
+    const pngRel = `media/${m[1]}/${m[2]}.png`;
+    const pngAbs = path.join(root, pngRel);
+    const stampAbs = path.join(dir, 'render.json');
+    if (write) {
+      const png = await rasterise(svg);
+      fs.mkdirSync(path.dirname(pngAbs), { recursive: true });
+      fs.writeFileSync(pngAbs, png);
+      const side = `${pngAbs}.license.yaml`;
+      if (!fs.existsSync(side)) fs.writeFileSync(side, chartSidecar(rel, pngAbs, JSON.parse(fs.readFileSync(path.join(dir, 'chart.vl.json'), 'utf8')), png));
+      fs.writeFileSync(stampAbs, `${JSON.stringify({ png: pngRel, svg_sha256: sha256(svg), png_sha256: sha256(png) }, null, 2)}\n`);
+      continue;
+    }
+    let stamp;
+    try { stamp = JSON.parse(fs.readFileSync(stampAbs, 'utf8')); } catch { errors.push(`${rel}: render.json missing or invalid; run npm run charts`); continue; }
+    if (stamp.svg_sha256 !== sha256(svg)) errors.push(`${rel}: ${pngRel} is out of date with chart.vl.json/data; run npm run charts`);
+    else if (!fs.existsSync(pngAbs)) errors.push(`${rel}: ${pngRel} missing; run npm run charts`);
+    else if (stamp.png !== pngRel || stamp.png_sha256 !== sha256(fs.readFileSync(pngAbs))) errors.push(`${rel}: ${pngRel} does not match render.json (edited by hand?); run npm run charts`);
   }
-  return { errors, outputs };
+  return { errors, count };
 }

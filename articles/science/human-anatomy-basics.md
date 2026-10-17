@@ -125,9 +125,9 @@ There are three main planes:[^6]
 The median plane is the sagittal plane through the midline.[^6]
 It divides the body into two equal halves.[^6]
 
-![3D human figure with the median, parasagittal, coronal and transverse planes drawn in colour](media/human-anatomy-basics/human-anatomy-planes-labeled.svg)
+![3D human figure with the median, parasagittal, coronal and transverse planes drawn in colour](media/human-anatomy-basics/human-anatomy-planes-labeled.webp)
 
-*Figure 2. The main body planes on a standing figure. Each plane cuts the body in a different direction. "Human anatomy planes, labeled" by David Richfield, Mikael Häggström and cmglee, Wikimedia Commons, CC BY-SA 4.0.*
+*Figure 2. The main body planes on a standing figure. Each plane cuts the body in a different direction. "Human anatomy planes, labeled" by David Richfield, Mikael Häggström and cmglee, Wikimedia Commons, CC BY-SA 4.0, converted from SVG to WebP.*
 
 <details><summary>Description</summary>
 

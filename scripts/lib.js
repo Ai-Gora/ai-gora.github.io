@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 import yaml from 'js-yaml';
 import Ajv from 'ajv/dist/2020.js';
 import addFormats from 'ajv-formats';
-import { checkMediaDir, checkAccessibility, sentenceWarnings, mediaPathProblem, svgProblems } from './style.js';
+import { checkMediaDir, checkAccessibility, sentenceWarnings, mediaPathProblem, mediaTypeProblem } from './style.js';
 
 const SCHEMA_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'schema');
 export const SITE_NAME = 'Aigora';
@@ -68,6 +68,13 @@ export function extractWikilinks(text) {
 export const extractCitations = (text) => [...text.matchAll(CITE)].map((m) => Number(m[1]));
 
 /** Load and validate a content tree. Returns { errors: string[], content }. */
+/** STYLE S2: the only lines allowed in '## Quiz' / '## Kviz'. The first (pointer to the quiz file) is required. */
+export function quizSectionLines(lang, slug) {
+  return lang === 'sl'
+    ? [`Kviz za ta članek je v datoteki \`quizzes/${slug}.yaml\`.`, 'Spletno mesto ga prikaže na strani s kvizom za ta članek.']
+    : [`The quiz for this article is in \`quizzes/${slug}.yaml\`.`, 'The site shows it on the quiz page for this article.'];
+}
+
 export function loadContent(root) {
   const v = makeValidators();
   const errors = [];
@@ -152,6 +159,11 @@ export function loadContent(root) {
         if (s.heading.trim() !== want) problems.push(`heading must be exactly '${want}'`);
         if (!fs.existsSync(path.join(root, 'quizzes', `${a.fm.slug}.yaml`))) problems.push(`quizzes/${a.fm.slug}.yaml does not exist`);
         if (i + 1 < a.sections.length && a.sections[i + 1].level > 2) problems.push('it must not have subsections');
+        // Fixed body: only the pointer line to the quiz file and, optionally, the fixed site phrase. No free text, so no uncited claims.
+        const allowed = quizSectionLines(a.fm.lang, a.fm.slug);
+        const lines = s.text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+        if (!lines.includes(allowed[0])) problems.push(`it must contain the line: ${allowed[0]}`);
+        for (const l of lines) if (!allowed.includes(l)) problems.push(`only the fixed quiz lines are allowed, found: "${l.length > 60 ? `${l.slice(0, 57)}...` : l}"`);
         if (!problems.length) continue;
         err(a.file, `section '#quiz' is not a valid quiz pointer: ${problems.join('; ')}`);
         continue;
@@ -190,7 +202,7 @@ export function loadContent(root) {
   for (const a of articles) {
     for (const m of a.body.matchAll(/!\[[^\]]*\]\(([^)\s]+)\)/g)) {
       const src = m[1];
-      if (!/^media\/[A-Za-z0-9._/-]+\.(svg|png|jpe?g|webp|gif)$/i.test(src) || src.split('/').includes('..')) err(a.file, `image ${src} must be a media/ path to an svg, png, jpg, webp or gif file`);
+      if (!/^media\/[A-Za-z0-9._/-]+\.(png|jpe?g|webp|gif)$/i.test(src) || src.split('/').includes('..')) err(a.file, `image ${src} must be a media/ path to a png, jpg, webp or gif file (SVG is not published)`);
       else if (!fs.existsSync(path.join(root, src)) ) err(a.file, `image ${src} does not exist`);
     }
   }
@@ -305,17 +317,19 @@ export function buildOutputs(content) {
 }
 
 /** Merge maps of { relativePath: string } into one new object, rejecting duplicate paths. */
-/** Copy committed media images (not chart.svg, which the chart build renders) into the site: { 'media/...': Buffer }. */
+/** Copy published media (allowlisted raster images only, never SVG) into the site: { 'media/...': Buffer }. Sidecars stay in the repo. */
 export function mediaOutputs(root) {
   const out = {};
   for (const f of walk(path.join(root, 'media'), '')) {
     const rel = path.relative(root, f).split(path.sep).join('/');
-    if (!/\.(svg|png|jpe?g|webp|gif)$/i.test(rel) || /\/chart\.svg$/.test(rel)) continue;
-    // Same guard as checkMediaDir: never follow a symlink or copy a file from outside media/ into the site.
+    const name = path.basename(f);
+    // Same guards as checkMediaDir: never follow a symlink, never copy from outside media/, only allowlisted types with matching magic bytes.
     const problem = mediaPathProblem(root, f);
     if (problem) throw new Error(`${rel}: ${problem}; refusing to publish it`);
+    if (name === '.gitkeep' || name.endsWith('.license.yaml')) continue;
     const buf = fs.readFileSync(f);
-    if (/\.svg$/i.test(rel)) { const bad = svgProblems(buf.toString('utf8')); if (bad.length) throw new Error(`${rel}: unsafe SVG, ${bad.join(', ')}; refusing to publish it`); }
+    const typeProblem = mediaTypeProblem(f, buf);
+    if (typeProblem) throw new Error(`${rel}: ${typeProblem}; refusing to publish it`);
     out[rel] = buf;
   }
   return out;

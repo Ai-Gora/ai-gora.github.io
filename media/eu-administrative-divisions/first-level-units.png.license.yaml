@@ -1,0 +1,12 @@
+file: first-level-units.png
+title: "First-level administrative units in EU-27 countries"
+author: Aigora contributors
+source_url: https://github.com/Ai-Gora/ai-gora.github.io/tree/main/charts/eu-administrative-divisions/first-level-units
+license: CC-BY-SA-4.0
+license_url: https://creativecommons.org/licenses/by-sa/4.0/
+modified: "rendered by npm run charts from charts/eu-administrative-divisions/first-level-units/chart.vl.json (Vega-Lite to SVG to PNG)"
+format: image/png
+width: 1290
+height: 982
+ai_generated: false
+notes: Data source and long description are in charts/eu-administrative-divisions/first-level-units/README.md.

@@ -12,7 +12,7 @@ import { buildCharts as buildChartsRaw, renderChart as renderChartRaw, safeDataP
 // aria-label attributes are excluded: Vega-Lite echoes data values (including the hostile ones fed in below) there as inert, escaped text.
 const SVGS = [];
 const renderChart = async (dir) => { const svg = await renderChartRaw(dir); SVGS.push(svg); return svg; };
-const buildCharts = async (...a) => { const res = await buildChartsRaw(...a); SVGS.push(...Object.values(res.outputs)); return res; };
+const buildCharts = (...a) => buildChartsRaw(...a); // its renders go through renderChartRaw; the guard sees direct renderChart calls
 const scriptable = (svg) => /javascript:/i.test(svg.replace(/aria-label="[^"]*"/g, ''));
 after(() => {
   assert.ok(SVGS.length >= 8, `guard saw only ${SVGS.length} SVGs`);
@@ -24,6 +24,10 @@ import { loadContent, mediaOutputs } from '../scripts/lib.js';
 const REPO = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'aigora-style-'));
 const write = (root, rel, data) => { const p = path.join(root, rel); fs.mkdirSync(path.dirname(p), { recursive: true }); fs.writeFileSync(p, data); };
+// Minimal valid file headers, so magic-byte checks pass.
+const PNG = Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), Buffer.alloc(24)]);
+const JPG = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0, 0x10]);
+const WEBP = Buffer.concat([Buffer.from('RIFF'), Buffer.alloc(4), Buffer.from('WEBPVP8 ')]);
 const SIDE = (license) => `file: a.png\ntitle: Leaf\nauthor: J. Novak\nsource_url: https://commons.wikimedia.org/wiki/File:Leaf.png\nlicense: ${license}\n`;
 const words = (n) => Array.from({ length: n }, (_, i) => `w${i}`).join(' ');
 
@@ -47,21 +51,20 @@ test('unknown licence and missing TASL fields fail', () => {
   assert.ok(e.some((x) => /'source_url'/.test(x)));
 });
 
-test('checkMediaDir: missing sidecar, good sidecar, bad licence, generated chart', () => {
+test('checkMediaDir: missing sidecar, good sidecar, bad licence, orphan sidecar', () => {
   const r = tmp();
-  write(r, 'media/leaf/a.png', 'x');
+  write(r, 'media/leaf/a.png', PNG);
   assert.match(checkMediaDir(r).join(), /media\/leaf\/a\.png: image has no licence sidecar a\.png\.license\.yaml/);
   write(r, 'media/leaf/a.png.license.yaml', SIDE('CC-BY-SA-4.0'));
   assert.deepEqual(checkMediaDir(r), []);
   write(r, 'media/leaf/a.png.license.yaml', SIDE('CC-BY-NC-4.0'));
   assert.match(checkMediaDir(r).join(), /a\.png\.license\.yaml: licence CC-BY-NC-4.0 is not allowed/);
   write(r, 'media/leaf/a.png.license.yaml', SIDE('CC0-1.0'));
-  write(r, 'media/leaf/c/chart.svg', '<svg/>');
-  write(r, 'media/leaf/c/chart.vl.json', JSON.stringify({ data: { url: 'data.csv' } }));
-  write(r, 'media/leaf/c/data.csv', 'a\n1\n');
+  write(r, 'media/leaf/b.jpg', JPG); write(r, 'media/leaf/b.jpg.license.yaml', SIDE('CC0-1.0'));
+  write(r, 'media/leaf/c.webp', WEBP); write(r, 'media/leaf/c.webp.license.yaml', SIDE('CC0-1.0'));
   assert.deepEqual(checkMediaDir(r), []);
-  write(r, 'media/leaf/other.svg', '<svg/>');
-  assert.match(checkMediaDir(r).join(), /other\.svg: image has no licence sidecar/);
+  write(r, 'media/leaf/gone.png.license.yaml', SIDE('CC0-1.0'));
+  assert.deepEqual(checkMediaDir(r), ['media/leaf/gone.png.license.yaml: sidecar for a file that does not exist']);
 });
 
 test('images need alt text of 125 characters or fewer', () => {
@@ -103,41 +106,48 @@ test('sentence-length warnings never fail the build', () => {
 
 const SPEC = { $schema: 'https://vega.github.io/schema/vega-lite/v6.json', data: { url: 'data.csv' }, mark: 'bar', encoding: { x: { field: 'year', type: 'ordinal' }, y: { field: 'n', type: 'quantitative' } } };
 
-test('Vega-Lite charts render to SVG; stale, missing and unsafe charts fail', async () => {
+test('charts: sources in charts/, only a PNG is published; stale, hand-edited, missing and unsafe charts fail', async () => {
   const r = tmp();
-  write(r, 'media/demo/c/data.csv', 'year,n\n2020,3\n2021,5\n');
-  write(r, 'media/demo/c/chart.vl.json', JSON.stringify(SPEC));
-  write(r, 'media/demo/c/README.md', 'Source: test data.\n');
+  write(r, 'charts/demo/c/data.csv', 'year,n\n2020,3\n2021,5\n');
+  write(r, 'charts/demo/c/chart.vl.json', JSON.stringify({ ...SPEC, title: 'Demo' }));
+  write(r, 'charts/demo/c/README.md', 'Source: test data.\n');
   let res = await buildCharts(r);
-  assert.match(res.errors.join(), /chart\.svg missing/);
+  assert.match(res.errors.join(), /render\.json missing/);
   res = await buildCharts(r, { write: true });
   assert.deepEqual(res.errors, []);
-  assert.match(res.outputs['media/demo/c/chart.svg'], /^<svg[\s\S]*<\/svg>\n$/);
+  assert.equal(res.count, 1);
+  const png = fs.readFileSync(path.join(r, 'media/demo/c.png'));
+  assert.ok(png.subarray(1, 4).equals(Buffer.from('PNG')), 'a real PNG is written to media/<slug>/<chart>.png');
+  assert.ok(!fs.existsSync(path.join(r, 'charts/demo/c/chart.svg')) && !fs.existsSync(path.join(r, 'media/demo/c.svg')), 'no SVG is written');
+  assert.deepEqual(checkMediaDir(r), [], 'generated PNG and sidecar pass the media checks');
+  assert.deepEqual(Object.keys(mediaOutputs(r)), ['media/demo/c.png']);
   assert.deepEqual((await buildCharts(r)).errors, []);
-  write(r, 'media/demo/c/data.csv', 'year,n\n2020,3\n2021,9\n');
-  assert.match((await buildCharts(r)).errors.join(), /chart\.svg is out of date/);
-  fs.rmSync(path.join(r, 'media/demo/c/README.md'));
+  write(r, 'charts/demo/c/data.csv', 'year,n\n2020,3\n2021,9\n');
+  assert.match((await buildCharts(r)).errors.join(), /media\/demo\/c\.png is out of date/);
+  await buildCharts(r, { write: true });
+  write(r, 'media/demo/c.png', Buffer.concat([png, Buffer.from([0])]));
+  assert.match((await buildCharts(r)).errors.join(), /does not match render\.json/);
+  fs.rmSync(path.join(r, 'charts/demo/c/README.md'));
   assert.match((await buildCharts(r)).errors.join(), /chart needs README\.md/);
-  write(r, 'media/demo/c/chart.vl.json', JSON.stringify({ ...SPEC, data: { url: '../../../../etc/passwd' } }));
+  write(r, 'charts/demo/c/chart.vl.json', JSON.stringify({ ...SPEC, data: { url: '../../../../etc/passwd' } }));
   assert.match((await buildCharts(r)).errors.join(), /must be a regular file inside the chart folder/);
+  write(r, 'charts/Demo_x/c/chart.vl.json', JSON.stringify(SPEC));
+  assert.match((await buildCharts(r)).errors.join(), /chart folders must be charts\/<slug>\/<chart>/);
 });
 
-test('every non-chart media file needs a sidecar, not only images', () => {
+test('only allowlisted raster types may live in media/ (STYLE V7)', () => {
   const r = tmp();
-  write(r, 'media/leaf/notes.pdf', 'x');
+  write(r, 'media/leaf/notes.pdf', '%PDF-1.4');
+  write(r, 'media/leaf/notes.pdf.license.yaml', SIDE('CC0-1.0'));
   write(r, 'media/leaf/clip.mp4', 'x');
+  write(r, 'media/leaf/c/data.csv', 'a\n1\n');
   write(r, 'media/.gitkeep', '');
   const e = checkMediaDir(r);
-  assert.match(e.join(), /notes\.pdf: media file has no licence sidecar notes\.pdf\.license\.yaml/);
-  assert.match(e.join(), /clip\.mp4: media file has no licence sidecar/);
-  assert.equal(e.length, 2);
-  write(r, 'media/leaf/notes.pdf.license.yaml', SIDE('CC-BY-4.0'));
-  write(r, 'media/leaf/clip.mp4.license.yaml', SIDE('CC-BY-ND-4.0'));
-  assert.deepEqual(checkMediaDir(r).length, 1);
-  write(r, 'media/leaf/c/chart.vl.json', JSON.stringify({ data: { url: 'data.csv' } }));
-  write(r, 'media/leaf/c/data.csv', 'a\n1\n');
-  write(r, 'media/leaf/c/README.md', 'x');
-  assert.equal(checkMediaDir(r).length, 1);
+  assert.match(e.join(), /notes\.pdf: file type \.pdf is not published/);
+  assert.match(e.join(), /clip\.mp4: file type \.mp4 is not published/);
+  assert.match(e.join(), /data\.csv: file type \.csv is not published/);
+  assert.equal(e.length, 3);
+  assert.throws(() => mediaOutputs(r), /file type \.(csv|mp4|pdf) is not published.*refusing to publish/);
 });
 
 test('alt and Mermaid errors use file line numbers', () => {
@@ -158,10 +168,10 @@ test('alt and Mermaid errors use file line numbers', () => {
 
 const chartDir = (spec) => {
   const r = tmp();
-  write(r, 'media/demo/c/data.csv', 'year,n,u\n2020,3,a.html\n2021,5,b.html\n');
-  write(r, 'media/demo/c/README.md', 'Source: test data.\n');
-  write(r, 'media/demo/c/chart.vl.json', JSON.stringify(spec));
-  return { r, dir: path.join(r, 'media/demo/c') };
+  write(r, 'charts/demo/c/data.csv', 'year,n,u\n2020,3,a.html\n2021,5,b.html\n');
+  write(r, 'charts/demo/c/README.md', 'Source: test data.\n');
+  write(r, 'charts/demo/c/chart.vl.json', JSON.stringify(spec));
+  return { r, dir: path.join(r, 'charts/demo/c') };
 };
 
 test('symlinked data files and symlinked folders are refused (check and load)', async () => {
@@ -177,7 +187,8 @@ test('symlinked data files and symlinked folders are refused (check and load)', 
   assert.equal(safeDataPath(dir, 'data.csv'), path.join(fs.realpathSync(dir), 'data.csv'));
   const res = await buildCharts(r, { write: true });
   assert.match(res.errors.join(), /chart data url 'link\.csv' must be a regular file inside the chart folder/);
-  assert.equal(Object.keys(res.outputs).length, 0);
+  assert.equal(res.count, 0);
+  assert.ok(!fs.existsSync(path.join(r, 'media/demo/c.png')), 'nothing is published for a refused chart');
 });
 
 test('SVG hrefs stay relative (no absolute build paths)', async () => {
@@ -255,37 +266,6 @@ test('sanitizeChartUrl unit cases', () => {
   }
 });
 
-test('chart folder: unlicensed photo fails; spec, svg, README and referenced data are exempt', () => {
-  const r = tmp();
-  write(r, 'media/demo/c/chart.vl.json', JSON.stringify({ ...SPEC, data: { url: 'data.csv' }, layer: [{ data: { url: 'sub/extra.json' }, mark: 'line' }] }));
-  write(r, 'media/demo/c/chart.svg', '<svg/>');
-  write(r, 'media/demo/c/README.md', 'x');
-  write(r, 'media/demo/c/data.csv', 'year,n\n2020,1\n');
-  write(r, 'media/demo/c/sub/extra.json', '[]');
-  assert.deepEqual(checkMediaDir(r), []);
-  write(r, 'media/demo/c/photo.jpg', 'x');
-  write(r, 'media/demo/c/unused.csv', 'a\n1\n');
-  write(r, 'media/demo/c/sub/pic.png', 'x');
-  const e = checkMediaDir(r);
-  assert.deepEqual(e.sort(), [
-    'media/demo/c/photo.jpg: image has no licence sidecar photo.jpg.license.yaml',
-    'media/demo/c/sub/pic.png: image has no licence sidecar pic.png.license.yaml',
-    'media/demo/c/unused.csv: media file has no licence sidecar unused.csv.license.yaml',
-  ]);
-  write(r, 'media/demo/c/photo.jpg.license.yaml', SIDE('CC-BY-SA-4.0'));
-  write(r, 'media/demo/c/unused.csv.license.yaml', SIDE('CC0-1.0'));
-  write(r, 'media/demo/c/sub/pic.png.license.yaml', SIDE('CC-BY-NC-4.0'));
-  assert.deepEqual(checkMediaDir(r), ['media/demo/c/sub/pic.png.license.yaml: licence CC-BY-NC-4.0 is not allowed (NC/ND licences are blocked, STYLE L2)']);
-});
-
-test('chart folder: image referenced only by an image mark (not data) still needs a sidecar', () => {
-  const r = tmp();
-  write(r, 'media/demo/c/chart.vl.json', JSON.stringify({ data: { values: [{ a: 1 }] }, mark: { type: 'image' }, encoding: { url: { value: 'pic.png' } } }));
-  write(r, 'media/demo/c/pic.png', 'x');
-  write(r, 'media/demo/c/README.md', 'x');
-  assert.match(checkMediaDir(r).join(), /pic\.png: image has no licence sidecar/);
-});
-
 test('guard detector catches javascript: outside aria-label', () => {
   assert.ok(scriptable('<a xlink:href="javascript:alert(1)">'));
   assert.ok(!scriptable('<path aria-label="u: javascript:alert(1)"/>'));
@@ -315,28 +295,49 @@ test('media symlinks are refused by checkMediaDir and by the build copy step (re
   assert.throws(() => mediaOutputs(r2), /refusing to publish/);
 });
 
-test('unsafe SVGs are rejected, the committed SVGs pass (review #9.2)', () => {
-  const evil = {
-    'script.svg': '<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>',
-    'onload.svg': '<svg xmlns="http://www.w3.org/2000/svg" onload="alert(1)"></svg>',
-    'fo.svg': '<svg xmlns="http://www.w3.org/2000/svg"><foreignObject><p>x</p></foreignObject></svg>',
-    'js.svg': '<svg xmlns="http://www.w3.org/2000/svg"><a href="javascript:alert(1)">x</a></svg>',
-    'xlink.svg': '<svg xmlns="http://www.w3.org/2000/svg"><image xlink:href="https://evil.example/t.png"/></svg>',
-    'proto.svg': '<svg xmlns="http://www.w3.org/2000/svg"><use href="//evil.example/s.svg#a"/></svg>',
-    'url.svg': '<svg xmlns="http://www.w3.org/2000/svg"><rect style="fill:url(https://evil.example/p)"/></svg>',
-    'import.svg': '<svg xmlns="http://www.w3.org/2000/svg"><style>@import "x.css";</style></svg>',
-    'datasvg.svg': '<svg xmlns="http://www.w3.org/2000/svg"><image href="data:image/svg+xml;base64,AAAA"/></svg>',
-  };
-  const want = { 'script.svg': /<script>/, 'onload.svg': /on\* event/, 'fo.svg': /foreignObject/, 'js.svg': /javascript:/, 'xlink.svg': /external URL/, 'proto.svg': /external URL/, 'url.svg': /external url\(\)/, 'import.svg': /@import/, 'datasvg.svg': /non-raster data:/ };
+// Sentry's round-2 bypass samples for the old regex denylist. Any SVG is now refused, whatever it contains.
+const BYPASSES = {
+  'svg-ns-script': '<svg xmlns="http://www.w3.org/2000/svg" xmlns:svg="http://www.w3.org/2000/svg"><svg:script>alert(1)</svg:script></svg>',
+  'attr-gt': '<svg xmlns="http://www.w3.org/2000/svg"><rect data-x=">" onload="alert(1)"/></svg>',
+  'iframe': '<svg xmlns="http://www.w3.org/2000/svg"><iframe xmlns="http://www.w3.org/1999/xhtml" src="https://evil.example/"/></svg>',
+  'set-href': '<svg xmlns="http://www.w3.org/2000/svg"><a><set attributeName="href" to="http://evil.example/"/><text>x</text></a></svg>',
+  'entity-url': '<svg xmlns="http://www.w3.org/2000/svg"><rect style="fill:url(&#104;ttp://evil.example/p)"/></svg>',
+  'css-escape': '<svg xmlns="http://www.w3.org/2000/svg"><style>rect{fill:url(\\68 ttp://evil.example/p)}</style><rect/></svg>',
+  'plain': '<svg xmlns="http://www.w3.org/2000/svg"><rect width="1" height="1"/></svg>',
+};
+const utf16 = (s) => Buffer.concat([Buffer.from([0xff, 0xfe]), Buffer.from(s, 'utf16le')]);
+
+test('any SVG in media/ is rejected, including the review bypasses and SVGs renamed to .png (review #9 round 2)', () => {
   const r = tmp();
-  for (const [n, svg] of Object.entries(evil)) { write(r, `media/x/${n}`, svg); write(r, `media/x/${n}.license.yaml`, SIDE('CC0-1.0')); }
+  const files = [];
+  for (const [n, svg] of Object.entries(BYPASSES)) {
+    files.push([`media/x/${n}.svg`, svg], [`media/x/${n}.png`, svg]);
+  }
+  files.push(['media/x/utf16.svg', utf16(BYPASSES['svg-ns-script'])], ['media/x/utf16.png', utf16(BYPASSES['svg-ns-script'])]);
+  for (const [f, data] of files) { write(r, f, data); write(r, `${f}.license.yaml`, SIDE('CC0-1.0')); }
   const errs = checkMediaDir(r);
-  for (const [n, re] of Object.entries(want)) assert.ok(errs.some((e) => e.startsWith(`media/x/${n}: unsafe SVG`) && re.test(e)), `${n} not rejected:\n${errs.join('\n')}`);
-  assert.throws(() => mediaOutputs(r), /unsafe SVG/);
-  // A raster data: image and plain text URLs (xmlns, <desc>) are fine.
-  const ok = tmp();
-  write(ok, 'media/x/ok.svg', '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><desc>From http://commons.wikimedia.org/</desc><image xlink:href="data:image/jpeg;base64,AAAA"/></svg>');
-  write(ok, 'media/x/ok.svg.license.yaml', SIDE('CC0-1.0'));
-  assert.deepEqual(checkMediaDir(ok), []);
-  assert.deepEqual(checkMediaDir(REPO), [], 'committed media, including the anatomy-planes SVG and chart SVGs, pass');
+  for (const [f] of files) {
+    const re = f.endsWith('.svg') ? /file type \.svg is not published/ : /content does not match its \.png extension/;
+    assert.ok(errs.some((e) => e.startsWith(`${f}: `) && re.test(e)), `${f} not rejected:\n${errs.join('\n')}`);
+  }
+  assert.equal(errs.length, files.length);
+  // The build copy step refuses each one on its own.
+  for (const [f, data] of files) {
+    const one = tmp();
+    write(one, f, data); write(one, `${f}.license.yaml`, SIDE('CC0-1.0'));
+    assert.throws(() => mediaOutputs(one), /refusing to publish/, f);
+  }
+  assert.deepEqual(checkMediaDir(REPO), [], 'committed media are allowlisted rasters with matching magic bytes');
 });
+
+test('magic bytes must match the extension', () => {
+  const r = tmp();
+  const cases = [['a.png', JPG], ['b.jpg', PNG], ['c.webp', PNG], ['d.jpeg', WEBP], ['e.gif', PNG], ['f.png', Buffer.from('')]];
+  for (const [n, data] of cases) { write(r, `media/m/${n}`, data); write(r, `media/m/${n}.license.yaml`, SIDE('CC0-1.0')); }
+  const errs = checkMediaDir(r);
+  for (const [n] of cases) assert.ok(errs.some((e) => e.startsWith(`media/m/${n}: content does not match`)), `${n}:\n${errs.join('\n')}`);
+  write(r, 'media/m/a.png', PNG); write(r, 'media/m/b.jpg', JPG); write(r, 'media/m/c.webp', WEBP); write(r, 'media/m/d.jpeg', JPG);
+  write(r, 'media/m/e.gif', Buffer.from('GIF89a\0\0')); write(r, 'media/m/f.png', PNG);
+  assert.deepEqual(checkMediaDir(r), []);
+});
+

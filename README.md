@@ -13,8 +13,8 @@ npm ci
 npm run validate # schema, wikilink, citation, quiz-anchor and media-licence checks
 npm test         # validator tests (incl. failing cases)
 npm run lint     # eslint
-npm run build    # writes dist/ (incl. charts rendered from media/**/chart.vl.json)
-npm run charts   # regenerate committed chart.svg files after changing chart data or specs
+npm run build    # writes dist/ (copies only allowlisted raster media; never SVG)
+npm run charts   # re-render charts/**/chart.vl.json to media/<slug>/<chart>.png + render.json after changing chart data or specs
 ```
 
 ## Repo layout
@@ -23,8 +23,8 @@ npm run charts   # regenerate committed chart.svg files after changing chart dat
 articles/<category>/<slug>.md   one article per file, canonical source
 quizzes/<slug>.yaml             questions tied to article anchors
 topics/<topic>.yaml             categories: description, parent, related
-media/<slug>/...                images, each with a <file>.license.yaml sidecar (TASL + allowed licence)
-media/<slug>/<chart>/           data.csv + chart.vl.json (Vega-Lite) + generated chart.svg + README.md
+media/<slug>/...                published images only (webp, png, jpg/jpeg, gif; no SVG), each with a <file>.license.yaml sidecar
+charts/<slug>/<chart>/          chart sources, not published: data.csv + chart.vl.json (Vega-Lite) + README.md + render.json (hashes)
 schema/                         JSON Schemas: article frontmatter, quiz, topic, media licence
 scripts/                        build.js (CLI) + lib.js (validation and data) + site.js (HTML)
 web/assets/                     CSS and progressive-enhancement JS copied to dist/assets/
@@ -100,10 +100,10 @@ Code: MIT ([LICENSE](LICENSE)). Content: CC BY-SA 4.0 ([LICENSE-CONTENT](LICENSE
 
 | Rule | Check | Result |
 |---|---|---|
-| L1, L2, L5 | every file in `media/` (except `.license.yaml` sidecars, `.gitkeep`, and in a chart folder only `chart.vl.json`, `chart.svg`, `README.md` and the data files the spec loads via `data.url`) has `<file>.license.yaml` with `title`, `author`, `source_url` (or `source`), `license`; licence is CC0/PD, CC BY, CC BY-SA or NASA; NC, ND, Unsplash, Pexels, Pixabay are blocked | error |
+| L1, L2, L5, V7 | every file in `media/` is a regular file (no symlinks, real path inside `media/`) of an allowlisted type (`.webp`, `.png`, `.jpg`, `.jpeg`, `.gif`) whose magic bytes match its extension; SVG and any other type are errors, and the build copy step refuses them too. Every such file (except `.license.yaml` sidecars and `.gitkeep`) has `<file>.license.yaml` with `title`, `author`, `source_url` (or `source`), `license`; licence is CC0/PD, CC BY, CC BY-SA or NASA; NC, ND, Unsplash, Pexels, Pixabay are blocked | error |
 | V2 | every Mermaid block has `accTitle:` and `accDescr` | error |
 | V4 | every Markdown image has alt text of 125 characters or fewer | error |
-| V3 | each `media/<slug>/<chart>/chart.vl.json` renders server-side (data `url`s must be regular files inside the chart folder: no symlinks, schemes or absolute paths; SVG hrefs stay relative; links may only be https: URLs or in-folder files, images only in-folder files, everything else such as javascript:, data:, http:, // is emptied) to SVG (vega + vega-lite) into `dist/`, has a `README.md`, and the committed `chart.svg` matches | error |
+| V3 | each `charts/<slug>/<chart>/chart.vl.json` renders server-side to an intermediate SVG (data `url`s must be regular files inside the chart folder: no symlinks, schemes or absolute paths), has a `README.md`, and `render.json` matches both the SVG render and the committed `media/<slug>/<chart>.png` (`npm run charts` rasterises with resvg and refreshes both; CI only compares hashes) | error |
 | W2 | sentences over 25 words | warning only, never fails CI |
 
-In a chart folder only `chart.vl.json`, `chart.svg`, `README.md` and the referenced data files skip the sidecar; their `README.md` carries the data source.
+Chart sources live in `charts/`, outside `media/`, and are never published; the chart PNG gets a generated sidecar, and the chart `README.md` carries the data source and long description.

@@ -136,7 +136,7 @@ In 6 countries, the first-level unit is the municipal (LAU) level: Cyprus, Eston
 For Poland, Eurostat lists 17 NUTS 2 units, but Statistics Poland lists 16 voivodeships.[^6][^11]
 The chart shows the same numbers on a log scale, because Cyprus has many more units than the other countries.
 
-![Bar chart of first-level unit counts in the 27 EU countries, from 3 to 615](media/eu-administrative-divisions/first-level-units/chart.svg)
+![Bar chart of first-level unit counts in the 27 EU countries, from 3 to 615](media/eu-administrative-divisions/first-level-units.png)
 
 *Figure 1. Number of first-level units in each EU country, on a log scale: Cyprus has the most, Belgium and Portugal the fewest. Data: Eurostat NUTS 2024, Table 5, and national sources. Chart: Aigora, CC BY-SA 4.0.*
 
@@ -145,7 +145,7 @@ The chart shows the same numbers on a log scale, because Cyprus has many more un
 - Most units: Cyprus 615, Slovenia 212, Luxembourg 102, Estonia 79, Malta 68.
 - Middle: from 8 (Slovakia) to 43 (Latvia) units in 19 countries.
 - Fewest: Denmark 5, Belgium 3, Portugal 3.
-- The data file is `media/eu-administrative-divisions/first-level-units/data.csv`.
+- The data file is `charts/eu-administrative-divisions/first-level-units/data.csv`.
 
 </details>
 

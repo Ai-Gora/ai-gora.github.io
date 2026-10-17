@@ -126,9 +126,9 @@ Glavne ravnine so tri:[^6]
 Mediana (srednja) ravnina je sagitalna ravnina skozi sredino telesa.[^6]
 Telo deli na dve enaki polovici.[^6]
 
-![3D-model človeka z obarvano mediano, parasagitalno, frontalno in prečno ravnino](media/human-anatomy-basics/human-anatomy-planes-labeled.svg)
+![3D-model človeka z obarvano mediano, parasagitalno, frontalno in prečno ravnino](media/human-anatomy-basics/human-anatomy-planes-labeled.webp)
 
-*Slika 2. Glavne telesne ravnine na stoječi figuri. Vsaka ravnina telo prereže v drugi smeri. Oznake na sliki so v angleščini. »Human anatomy planes, labeled«, avtorji David Richfield, Mikael Häggström in cmglee, Wikimedia Commons, CC BY-SA 4.0.*
+*Slika 2. Glavne telesne ravnine na stoječi figuri. Vsaka ravnina telo prereže v drugi smeri. Oznake na sliki so v angleščini. »Human anatomy planes, labeled«, avtorji David Richfield, Mikael Häggström in cmglee, Wikimedia Commons, CC BY-SA 4.0, pretvorjeno iz SVG v WebP.*
 
 <details><summary>Opis</summary>
 

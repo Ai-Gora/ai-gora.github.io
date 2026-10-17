@@ -140,7 +140,7 @@ V 6 državah je enota prve ravni občinska raven (LAU): na Cipru, v Estoniji, La
 Za Poljsko Eurostat navaja 17 enot NUTS 2, poljski statistični urad pa 16 vojvodstev.[^6][^11]
 Diagram kaže enaka števila na logaritemski lestvici, ker ima Ciper veliko več enot kot druge države.
 
-![Stolpčni diagram števila enot prve ravni v 27 državah EU, od 3 do 615](media/upravna-delitev-drzav-eu/enote-prve-ravni/chart.svg)
+![Stolpčni diagram števila enot prve ravni v 27 državah EU, od 3 do 615](media/upravna-delitev-drzav-eu/enote-prve-ravni.png)
 
 *Slika 1. Število enot prve ravni v posamezni državi EU na logaritemski lestvici: največ jih ima Ciper, najmanj Belgija in Portugalska. Podatki: Eurostat NUTS 2024, tabela 5, in nacionalni viri. Diagram: Aigora, CC BY-SA 4.0.*
 
@@ -149,7 +149,7 @@ Diagram kaže enaka števila na logaritemski lestvici, ker ima Ciper veliko več
 - Največ enot: Ciper 615, Slovenija 212, Luksemburg 102, Estonija 79, Malta 68.
 - Sredina: od 8 (Slovaška) do 43 (Latvija) enot v 19 državah.
 - Najmanj enot: Danska 5, Belgija 3, Portugalska 3.
-- Podatkovna datoteka je `media/upravna-delitev-drzav-eu/enote-prve-ravni/data.csv`.
+- Podatkovna datoteka je `charts/upravna-delitev-drzav-eu/enote-prve-ravni/data.csv`.
 
 </details>
 

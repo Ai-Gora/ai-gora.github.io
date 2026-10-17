@@ -187,7 +187,8 @@ test('buildSite throws instead of overwriting a page (topic id "index" bypassing
 
 test('renderer: media images, pipe tables, details and mermaid blocks', () => {
   const ctx = { base: '../', titleOf: (s) => s };
-  assert.equal(renderInline('![Planes of the body](media/a/planes.svg)', ctx), '<img src="../media/a/planes.svg" alt="Planes of the body" loading="lazy">');
+  assert.equal(renderInline('![Planes of the body](media/a/planes.webp)', ctx), '<img src="../media/a/planes.webp" alt="Planes of the body" loading="lazy">');
+  assert.equal(renderInline('![x](media/a/planes.svg)', ctx), '', 'SVG is never published');
   assert.equal(renderInline('![x](https://evil.example/x.png)', ctx), '', 'remote images are dropped');
   assert.equal(renderInline('![x](media/../secret.png)', ctx), '', 'path traversal is dropped');
   assert.ok(!renderInline('![a" onerror="x](media/a/b.png)', ctx).includes('" onerror'), 'alt text is escaped');
