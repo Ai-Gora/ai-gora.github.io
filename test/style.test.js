@@ -19,7 +19,7 @@ after(() => {
   const bad = SVGS.filter(scriptable);
   assert.equal(bad.length, 0, `javascript: found in ${bad.length} generated SVG(s)`);
 });
-import { loadContent } from '../scripts/lib.js';
+import { loadContent, mediaOutputs } from '../scripts/lib.js';
 
 const REPO = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'aigora-style-'));
@@ -289,4 +289,54 @@ test('chart folder: image referenced only by an image mark (not data) still need
 test('guard detector catches javascript: outside aria-label', () => {
   assert.ok(scriptable('<a xlink:href="javascript:alert(1)">'));
   assert.ok(!scriptable('<path aria-label="u: javascript:alert(1)"/>'));
+});
+
+test('media symlinks are refused by checkMediaDir and by the build copy step (review #9.1)', () => {
+  const r = tmp();
+  const secret = path.join(tmp(), 'secret.png');
+  fs.writeFileSync(secret, 'host file');
+  fs.mkdirSync(path.join(r, 'media/leaf'), { recursive: true });
+  fs.symlinkSync(secret, path.join(r, 'media/leaf/a.png'));
+  write(r, 'media/leaf/a.png.license.yaml', SIDE('CC0-1.0'));
+  assert.match(checkMediaDir(r).join(), /media\/leaf\/a\.png: is a symlink/);
+  assert.throws(() => mediaOutputs(r), /media\/leaf\/a\.png: is a symlink.*refusing to publish/);
+  // A symlinked folder inside media/ is refused too.
+  const outside = tmp();
+  fs.writeFileSync(path.join(outside, 'b.png'), 'host file');
+  fs.symlinkSync(outside, path.join(r, 'media/dir'));
+  assert.match(checkMediaDir(r).join(), /media\/dir: is a symlink/);
+  // A symlinked media/ folder is refused.
+  const r2 = tmp();
+  fs.mkdirSync(path.join(outside, 'x'), { recursive: true });
+  fs.writeFileSync(path.join(outside, 'x/c.png'), 'host file');
+  fs.writeFileSync(path.join(outside, 'x/c.png.license.yaml'), SIDE('CC0-1.0'));
+  fs.symlinkSync(outside, path.join(r2, 'media'));
+  assert.match(checkMediaDir(r2).join(), /symlinked media\/ folder/);
+  assert.throws(() => mediaOutputs(r2), /refusing to publish/);
+});
+
+test('unsafe SVGs are rejected, the committed SVGs pass (review #9.2)', () => {
+  const evil = {
+    'script.svg': '<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>',
+    'onload.svg': '<svg xmlns="http://www.w3.org/2000/svg" onload="alert(1)"></svg>',
+    'fo.svg': '<svg xmlns="http://www.w3.org/2000/svg"><foreignObject><p>x</p></foreignObject></svg>',
+    'js.svg': '<svg xmlns="http://www.w3.org/2000/svg"><a href="javascript:alert(1)">x</a></svg>',
+    'xlink.svg': '<svg xmlns="http://www.w3.org/2000/svg"><image xlink:href="https://evil.example/t.png"/></svg>',
+    'proto.svg': '<svg xmlns="http://www.w3.org/2000/svg"><use href="//evil.example/s.svg#a"/></svg>',
+    'url.svg': '<svg xmlns="http://www.w3.org/2000/svg"><rect style="fill:url(https://evil.example/p)"/></svg>',
+    'import.svg': '<svg xmlns="http://www.w3.org/2000/svg"><style>@import "x.css";</style></svg>',
+    'datasvg.svg': '<svg xmlns="http://www.w3.org/2000/svg"><image href="data:image/svg+xml;base64,AAAA"/></svg>',
+  };
+  const want = { 'script.svg': /<script>/, 'onload.svg': /on\* event/, 'fo.svg': /foreignObject/, 'js.svg': /javascript:/, 'xlink.svg': /external URL/, 'proto.svg': /external URL/, 'url.svg': /external url\(\)/, 'import.svg': /@import/, 'datasvg.svg': /non-raster data:/ };
+  const r = tmp();
+  for (const [n, svg] of Object.entries(evil)) { write(r, `media/x/${n}`, svg); write(r, `media/x/${n}.license.yaml`, SIDE('CC0-1.0')); }
+  const errs = checkMediaDir(r);
+  for (const [n, re] of Object.entries(want)) assert.ok(errs.some((e) => e.startsWith(`media/x/${n}: unsafe SVG`) && re.test(e)), `${n} not rejected:\n${errs.join('\n')}`);
+  assert.throws(() => mediaOutputs(r), /unsafe SVG/);
+  // A raster data: image and plain text URLs (xmlns, <desc>) are fine.
+  const ok = tmp();
+  write(ok, 'media/x/ok.svg', '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><desc>From http://commons.wikimedia.org/</desc><image xlink:href="data:image/jpeg;base64,AAAA"/></svg>');
+  write(ok, 'media/x/ok.svg.license.yaml', SIDE('CC0-1.0'));
+  assert.deepEqual(checkMediaDir(ok), []);
+  assert.deepEqual(checkMediaDir(REPO), [], 'committed media, including the anatomy-planes SVG and chart SVGs, pass');
 });

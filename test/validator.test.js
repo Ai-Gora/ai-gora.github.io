@@ -225,3 +225,12 @@ test('committed media images are copied to the site, chart.svg is left to the ch
   assert.deepEqual(Object.keys(out), ['media/a/photo.webp']);
   assert.ok(Buffer.isBuffer(out['media/a/photo.webp']));
 });
+
+test('only a real Quiz pointer is exempt from citations (review #9.3)', () => {
+  const add = (sec) => (d) => edit(d, PHOTO, (t) => { const n = t.replace('## Sources {#sources}', `${sec}\n\n## Sources {#sources}`); assert.notEqual(n, t); return n; });
+  hasError(fixture(add('## Fun facts {#quiz}\n\nPlants are green.')).errors, /section '#quiz' is not a valid quiz pointer: heading must be exactly 'Quiz'/);
+  hasError(fixture(add('## Quiz {#quiz}\n\nSee the quiz.\n\n### More {#more}\n\nUncited claim.')).errors, /not a valid quiz pointer: it must not have subsections/);
+  hasError(fixture((d) => { add('## Quiz {#quiz}\n\nSee the quiz.')(d); fs.rmSync(path.join(d, 'quizzes/photosynthesis.yaml')); }).errors, /quizzes\/photosynthesis\.yaml does not exist/);
+  const sl = 'articles/geography/upravna-delitev-drzav-eu.md';
+  hasError(fixture((d) => edit(d, sl, (t) => t.replace('## Kviz {#quiz}', '## Quiz {#quiz}'))).errors, /upravna-delitev-drzav-eu\.md: section '#quiz' is not a valid quiz pointer: heading must be exactly 'Kviz'/);
+});

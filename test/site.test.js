@@ -198,3 +198,10 @@ test('renderer: media images, pipe tables, details and mermaid blocks', () => {
   assert.equal(renderBlocks('<details><summary>Description</summary>\n\n- one\n- two\n</details>', ctx), '<details><summary>Description</summary><ul><li>one</li><li>two</li></ul></details>');
   assert.equal(renderBlocks('```mermaid\nflowchart LR\n  A --> B\n```', ctx), '<pre class="mermaid"><code>flowchart LR\n  A --&gt; B</code></pre>');
 });
+
+test('a wikilink in image alt text stays plain text (review #9.4)', () => {
+  const ctx = { base: '../', titleOf: (s) => s };
+  assert.equal(renderInline('![Map of [[bela-krajina-dialects|Bela Krajina]] and [[photosynthesis]]](media/a/map.png)', ctx), '<img src="../media/a/map.png" alt="Map of Bela Krajina and photosynthesis" loading="lazy">');
+  assert.ok(!renderInline('![x [[a#b|c]]](media/a/m.png) and [[d]]', ctx).includes('alt="x <a'), 'no <a> inside alt');
+  assert.match(renderInline('![x](media/a/m.png) see [[d]]', ctx), /alt="x" loading="lazy"> see <a href="\.\.\/a\/d\.html">d<\/a>/);
+});

@@ -19,16 +19,18 @@ export function renderInline(text, ctx) {
   return text.split(/(`[^`\n]+`)/).map((part, i) => {
     if (i % 2) return `<code>${esc(part.slice(1, -1))}</code>`;
     let s = esc(part).replaceAll(NUL, ''); // NUL is reserved for tag placeholders below
+    // Images first (before wikilinks), so alt text stays plain: [[slug|text]] in alt becomes its text.
+    // Only repo media (STYLE V4/L5), rewritten against the page base; anything else is dropped.
+    s = s.replace(/!\[((?:\[\[[^\]]*\]\]|[^\]])*)\]\(([^)\s]+)\)/g, (_m, alt, src) => {
+      const plain = alt.replace(/\[\[([^\]|#]+)(?:#[^\]|]+)?(?:\|([^\]]+))?\]\]/g, (_w, slug, txt) => (txt || slug).trim());
+      const ok = /^media\/[A-Za-z0-9._/-]+\.(svg|png|jpe?g|webp|gif)$/i.test(src) && !src.split('/').includes('..');
+      return ok ? `<img src="${ctx.base}${src}" alt="${plain}" loading="lazy">` : '';
+    });
     s = s.replace(/\[\[([^\]|#]+)(?:#([^\]|]+))?(?:\|([^\]]+))?\]\]/g, (_m, slug, anchor, txt) => {
       slug = slug.trim();
       const title = ctx.titleOf(slug);
       const href = `${ctx.base}a/${slug}.html${anchor ? `#${anchor.trim()}` : ''}`;
       return `<a href="${href}">${txt ? txt.trim() : esc(title || slug)}</a>`;
-    });
-    // Images: only repo media (STYLE V4/L5), rewritten against the page base; anything else is dropped.
-    s = s.replace(/!\[([^\]]*)\]\(([^)\s]+)\)/g, (_m, alt, src) => {
-      const ok = /^media\/[A-Za-z0-9._/-]+\.(svg|png|jpe?g|webp|gif)$/i.test(src) && !src.split('/').includes('..');
-      return ok ? `<img src="${ctx.base}${src}" alt="${alt}" loading="lazy">` : '';
     });
     s = s.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (_m, txt, url) => `<a href="${safeUrl(url)}">${txt}</a>`);
     const tags = [];

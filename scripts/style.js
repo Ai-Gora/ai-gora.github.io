@@ -30,6 +30,40 @@ function walk(dir) {
   }).sort();
 }
 
+/**
+ * A media entry must be a regular file (not a symlink) whose real path stays inside media/.
+ * Returns a problem string or null. Used by checkMediaDir and by the build copy step.
+ */
+export function mediaPathProblem(root, f) {
+  const media = path.join(root, 'media');
+  let st;
+  try { st = fs.lstatSync(f); } catch (e) { return `cannot be read (${e.code || e.message})`; }
+  if (st.isSymbolicLink()) return 'is a symlink (media files must be regular files)';
+  if (!st.isFile()) return 'is not a regular file';
+  try {
+    if (fs.lstatSync(media).isSymbolicLink()) return 'is inside a symlinked media/ folder';
+    const r = path.relative(fs.realpathSync(media), fs.realpathSync(f));
+    if (!r || r.startsWith('..') || path.isAbsolute(r)) return 'resolves outside media/';
+  } catch (e) { return `cannot be resolved (${e.code || e.message})`; }
+  return null;
+}
+
+/** SVG content that must never be published: scripts, event handlers, foreignObject, javascript: and external references. */
+export function svgProblems(text) {
+  const rules = [
+    [/<script\b/i, 'contains <script>'],
+    [/<[^>]*\son[a-z]+\s*=/i, 'contains an on* event attribute'],
+    [/<foreignObject\b/i, 'contains <foreignObject>'],
+    [/javascript\s*:/i, 'contains a javascript: URL'],
+    [/\bhref\s*=\s*["']\s*(https?:|\/\/)/i, 'references an external URL in href/xlink:href'],
+    [/\bhref\s*=\s*["']\s*data:(?!image\/(png|jpe?g|gif|webp)[;,])/i, 'embeds a non-raster data: URL in href/xlink:href'],
+    [/\bhref\s*=\s*["'][^"']*&#/i, 'uses character references inside href'],
+    [/url\(\s*["']?\s*(https?:|\/\/)/i, 'references an external url()'],
+    [/@import\b/i, 'contains @import'],
+  ];
+  return rules.filter(([re]) => re.test(text)).map(([, msg]) => msg);
+}
+
 /** Data urls a Vega-Lite spec loads: every `data: { url }` (top level, layers, lookups). */
 export function specDataUrls(spec) {
   const urls = [];
@@ -69,12 +103,20 @@ export function checkMediaDir(root) {
   const rel = (p) => path.relative(root, p).split(path.sep).join('/');
   const files = walk(path.join(root, 'media'));
   const exempt = chartExemptFiles(files);
+  const unsafe = new Set();
   for (const f of files) {
+    const problem = mediaPathProblem(root, f);
+    if (problem) { errs.push(`${rel(f)}: ${problem}`); unsafe.add(f); continue; }
+    if (path.extname(f).toLowerCase() === '.svg') for (const p of svgProblems(fs.readFileSync(f, 'utf8'))) errs.push(`${rel(f)}: unsafe SVG, ${p}`);
+  }
+  for (const f of files) {
+    if (unsafe.has(f)) continue;
     const name = path.basename(f);
     if (name.endsWith('.license.yaml') || name === '.gitkeep') continue;
     if (exempt.has(f)) continue;
     const side = `${f}.license.yaml`;
     const kind = IMAGE_EXT.includes(path.extname(f).toLowerCase()) ? 'image' : 'media file';
+    if (unsafe.has(side)) continue;
     if (!fs.existsSync(side)) { errs.push(`${rel(f)}: ${kind} has no licence sidecar ${path.basename(side)}`); continue; }
     let s;
     try { s = yaml.load(fs.readFileSync(side, 'utf8'), { schema: yaml.JSON_SCHEMA }); } catch (e) { errs.push(`${rel(side)}: YAML parse error: ${e.reason || e.message}`); continue; }

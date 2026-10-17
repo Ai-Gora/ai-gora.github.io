@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 import yaml from 'js-yaml';
 import Ajv from 'ajv/dist/2020.js';
 import addFormats from 'ajv-formats';
-import { checkMediaDir, checkAccessibility, sentenceWarnings } from './style.js';
+import { checkMediaDir, checkAccessibility, sentenceWarnings, mediaPathProblem, svgProblems } from './style.js';
 
 const SCHEMA_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'schema');
 export const SITE_NAME = 'Aigora';
@@ -144,7 +144,18 @@ export function loadContent(root) {
       for (const b of bullets) if (!extractCitations(b).length) err(a.file, `Key claims bullet has no citation: "${b.replace(/^\s*[-*]\s+/, '').trim()}"`);
     }
     for (const [i, s] of a.sections.entries()) {
-      if (s.level !== 2 || s.anchor === 'sources' || s.anchor === 'key-claims' || s.anchor === 'quiz') continue; // STYLE S2: Quiz points to quizzes/<slug>.yaml
+      if (s.level !== 2 || s.anchor === 'sources' || s.anchor === 'key-claims') continue;
+      if (s.anchor === 'quiz') {
+        // STYLE S2: the Quiz section only points to quizzes/<slug>.yaml, so it is exempt from citations, but only when it is a real quiz pointer.
+        const want = a.fm.lang === 'sl' ? 'Kviz' : 'Quiz';
+        const problems = [];
+        if (s.heading.trim() !== want) problems.push(`heading must be exactly '${want}'`);
+        if (!fs.existsSync(path.join(root, 'quizzes', `${a.fm.slug}.yaml`))) problems.push(`quizzes/${a.fm.slug}.yaml does not exist`);
+        if (i + 1 < a.sections.length && a.sections[i + 1].level > 2) problems.push('it must not have subsections');
+        if (!problems.length) continue;
+        err(a.file, `section '#quiz' is not a valid quiz pointer: ${problems.join('; ')}`);
+        continue;
+      }
       let text = s.text;
       for (let j = i + 1; j < a.sections.length && a.sections[j].level > 2; j++) text += `\n${a.sections[j].text}`;
       if (!extractCitations(text).length) err(a.file, `section '#${s.anchor || s.heading}' has no citation (every claim section needs a source)`);
@@ -300,7 +311,12 @@ export function mediaOutputs(root) {
   for (const f of walk(path.join(root, 'media'), '')) {
     const rel = path.relative(root, f).split(path.sep).join('/');
     if (!/\.(svg|png|jpe?g|webp|gif)$/i.test(rel) || /\/chart\.svg$/.test(rel)) continue;
-    out[rel] = fs.readFileSync(f);
+    // Same guard as checkMediaDir: never follow a symlink or copy a file from outside media/ into the site.
+    const problem = mediaPathProblem(root, f);
+    if (problem) throw new Error(`${rel}: ${problem}; refusing to publish it`);
+    const buf = fs.readFileSync(f);
+    if (/\.svg$/i.test(rel)) { const bad = svgProblems(buf.toString('utf8')); if (bad.length) throw new Error(`${rel}: unsafe SVG, ${bad.join(', ')}; refusing to publish it`); }
+    out[rel] = buf;
   }
   return out;
 }
