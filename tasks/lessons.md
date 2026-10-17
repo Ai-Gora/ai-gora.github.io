@@ -10,3 +10,4 @@ One line per mistake hit while building Aigora, so it is not repeated.
 - Site/validator tests pin the sample articles (headings, source order, lesson-path lists, node counts); rewriting a sample article or adding one in the same topic means updating those assertions in the same PR.
 - Applying bold/italics per text segment between tags (my #2 review fix) left literal `*` when emphasis wraps a link; swap tags for placeholders, apply emphasis across the whole string, then restore them.
 - A score comment claimed metadata (weight 0.5) "ranks below any content hit", but exact matches score weight × 2, so 0.5 × 2 tied a text prefix hit (1); check the arithmetic against the max of each field, and put metadata on one entry per article, not every section.
+- A fixture test that only asserts "no errors" passes vacuously if its `replace()` misses; assert the edit changed the file.

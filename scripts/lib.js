@@ -143,9 +143,11 @@ export function loadContent(root) {
       if (!bullets.length) err(a.file, 'Key claims section has no bullet claims');
       for (const b of bullets) if (!extractCitations(b).length) err(a.file, `Key claims bullet has no citation: "${b.replace(/^\s*[-*]\s+/, '').trim()}"`);
     }
-    for (const s of a.sections) {
+    for (const [i, s] of a.sections.entries()) {
       if (s.level !== 2 || s.anchor === 'sources' || s.anchor === 'key-claims') continue;
-      if (!extractCitations(s.text).length) err(a.file, `section '#${s.anchor || s.heading}' has no citation (every claim section needs a source)`);
+      let text = s.text;
+      for (let j = i + 1; j < a.sections.length && a.sections[j].level > 2; j++) text += `\n${a.sections[j].text}`;
+      if (!extractCitations(text).length) err(a.file, `section '#${s.anchor || s.heading}' has no citation (every claim section needs a source)`);
     }
   }
 
@@ -262,7 +264,7 @@ export function buildOutputs(content) {
   for (const a of sorted) {
     put(`a/${a.fm.slug}.md`, a.raw);
     put(`a/${a.fm.slug}.jsonld`, safeJson(jsonLd(a)));
-    put(`a/${a.fm.slug}.json`, { frontmatter: a.fm, category: a.category, sections: sectionsOf(a), links: a.links, backlinks: backlinks[a.fm.slug], quiz: quizBySlug.has(a.fm.slug) ? `data/quizzes/${a.fm.slug}.json` : null, jsonld: jsonLd(a) });
+    put(`a/${a.fm.slug}.json`, safeJson({ frontmatter: a.fm, category: a.category, sections: sectionsOf(a), links: a.links, backlinks: backlinks[a.fm.slug], quiz: quizBySlug.has(a.fm.slug) ? `data/quizzes/${a.fm.slug}.json` : null, jsonld: jsonLd(a) }));
   }
 
   const lines = [`# ${SITE_NAME}`, '', '> A free, open-source, permanent library readable by humans and machines. Articles are Markdown with YAML frontmatter, licensed CC BY-SA 4.0. Freshness is in each article\'s frontmatter (updated, review_after, status).', ''];
