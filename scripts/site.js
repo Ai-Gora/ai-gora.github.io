@@ -89,7 +89,7 @@ ${head}</head>
 ${body}
 </main>
 <footer class="site">
-<p>Content: <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a>. Code: MIT. <a href="${base}llms.txt">llms.txt</a> · <a href="${base}data/graph.json">graph.json</a> · <a href="https://github.com/Ai-Gora/aigora">Source on GitHub</a></p>
+<p>Content: <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a>. Code: MIT. <a href="${base}llms.txt">llms.txt</a> · <a href="${base}data/graph.json">graph.json</a> · <a href="https://github.com/Ai-Gora/ai-gora.github.io">Source on GitHub</a></p>
 </footer>
 ${scripts.map((s) => `<script type="module" src="${base}assets/${s}"></script>`).join('\n')}
 </body>
@@ -142,7 +142,7 @@ ${body}
 <footer class="article-foot">
 ${quiz ? `<p><a class="button" href="../quiz/${fm.slug}.html">Take the quiz on ${esc(fm.title)}</a></p>` : ''}
 <section aria-labelledby="back-h"><h2 id="back-h">What links here</h2>${back.length ? `<ul>${back.map((b) => `<li><a href="${b.slug}.html">${esc(b.title)}</a></li>`).join('')}</ul>` : '<p class="muted">No other articles link here yet.</p>'}</section>
-<p class="muted">ID <code>${esc(fm.id)}</code> · Licence ${esc(fm.license)} · <a href="${fm.slug}.md">Markdown source</a> · <a href="${fm.slug}.json">JSON</a> · <a href="https://github.com/Ai-Gora/aigora/commits/main/${esc(path.relative(ctx.root, a.file).split(path.sep).join('/'))}">History</a></p>
+<p class="muted">ID <code>${esc(fm.id)}</code> · Licence ${esc(fm.license)} · <a href="${fm.slug}.md">Markdown source</a> · <a href="${fm.slug}.json">JSON</a> · <a href="https://github.com/Ai-Gora/ai-gora.github.io/commits/main/${esc(path.relative(ctx.root, a.file).split(path.sep).join('/'))}">History</a></p>
 </footer>
 </article>`;
   return page({ title: fm.title, base: '../', lang: fm.lang, body: html, description: fm.summary.trim(), head: `<script type="application/ld+json">\n${safeJson(jsonLd(a))}</script>\n` });

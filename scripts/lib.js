@@ -9,7 +9,7 @@ import addFormats from 'ajv-formats';
 
 const SCHEMA_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'schema');
 export const SITE_NAME = 'Aigora';
-export const SITE_URL = 'https://ai-gora.github.io/aigora';
+export const SITE_URL = 'https://ai-gora.github.io';
 
 const loadYaml = (text) => yaml.load(text, { schema: yaml.JSON_SCHEMA });
 
