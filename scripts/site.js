@@ -182,11 +182,18 @@ const answerText = (q, lang = 'en') => {
   return Array.isArray(q.answer) ? q.answer.join(', ') : String(q.answer);
 };
 
+/** A topic's title or description as HTML for a page in `lang`: its i18n text, else the English text (lang="en" on non-English pages). */
+export function topicText(topic, lang, field = 'title') {
+  const local = topic?.i18n?.[lang]?.[field];
+  if (local) return esc(local);
+  const en = topic?.[field] ?? '';
+  return lang === 'en' ? esc(en) : `<span lang="en">${esc(en)}</span>`;
+}
+
 function articlePage(a, ctx) {
   const { fm } = a;
   const lang = fm.lang;
   const L = (k, v) => esc(t(lang, k, v));
-  const enText = (s) => (lang === 'en' ? esc(s) : `<span lang="en">${esc(s)}</span>`); // topic titles exist in English only
   const c = { ...ctx, base: '../', lang };
   const secs = a.sections;
   const lead = secs[0].heading ? '' : renderBlocks(secs[0].text, c);
@@ -196,7 +203,7 @@ function articlePage(a, ctx) {
     const h = `<h${s.level}${s.anchor ? ` id="${s.anchor}"` : ''}>${renderInline(s.heading, c)}</h${s.level}>`;
     return `${h}\n${s.anchor === 'sources' ? sources : renderBlocks(s.text, c)}`;
   }).join('\n');
-  const topicLinks = fm.topics.map((t) => `<a href="../paths/${t}.html">${enText(ctx.topicTitle(t))}</a>`).join(', ');
+  const topicLinks = fm.topics.map((tid) => `<a href="../${ctx.topicHref(tid, lang)}">${topicText(ctx.topics.get(tid) ?? { title: tid }, lang)}</a>`).join(', ');
   const back = ctx.backlinks[fm.slug] || [];
   const prereq = (fm.prerequisites || []).map((p) => `<li><a href="${p}.html">${esc(ctx.titleOf(p))}</a></li>`).join('');
   const quiz = ctx.quizSlugs.has(fm.slug);
@@ -308,7 +315,10 @@ export function buildSite(content, data, opts = {}) {
     quizSlugs: new Set(content.quizzes.map((q) => q.slug)),
     titleOf: (s) => content.bySlug.get(s)?.fm.title || s,
     headingOf: (s, an) => content.bySlug.get(s)?.sections.find((x) => x.anchor === an)?.heading || an,
+    topics: content.topics,
     topicTitle: (t) => content.topics.get(t)?.title || t,
+    // Non-English articles link to their language's lesson path when it exists.
+    topicHref: (tid, lang) => (lang !== 'en' && langs.includes(lang) && lessonPath(graph, topicsData, [tid], { lang }).length ? `paths/${lang}/${tid}.html` : `paths/${tid}.html`),
   };
   // Guard: a page path written twice (e.g. a topic or slug named 'index') is a build error, never a silent overwrite.
   const out = new Proxy({}, { set(t, k, v) { if (Object.hasOwn(t, k)) throw new Error(`duplicate output path: ${String(k)}`); t[k] = v; return true; } });
@@ -385,18 +395,17 @@ ${related.length ? `<h2>Related interests</h2><ul class="chips">${related.map((r
   for (const code of langs) {
     const codeTopics = usedTopics.filter((t) => lessonPath(graph, topicsData, [t.id], { lang: code }).length);
     const indexHref = (c) => (!c ? '../index.html' : c === code ? 'index.html' : `../${c}/index.html`);
-    const en = (s) => (code === 'en' ? esc(s) : `<span lang="en">${esc(s)}</span>`); // topic text exists in English only
     const pathsTitle = `${t(code, 'pathsTitle')} (${langName(code)})`;
     out[`paths/${code}/index.html`] = page({ title: pathsTitle, base: '../../', lang: code, current: 'paths/index.html', scripts: ['paths.js'], body: `<h1>${esc(pathsTitle)}</h1>
 ${langFilterNav(code, indexHref, code)}
 <p>${esc(t(code, 'pathsIntro'))}</p>
-<ul class="list">${codeTopics.map((tp) => `<li><a href="${tp.id}.html">${en(tp.title)}</a> <span class="muted">· ${esc(tn(code, 'articles', lessonPath(graph, topicsData, [tp.id], { lang: code }).length))}</span><br><span class="desc">${en(tp.description)}</span></li>`).join('')}</ul>` });
+<ul class="list">${codeTopics.map((tp) => `<li><a href="${tp.id}.html">${topicText(tp, code)}</a> <span class="muted">· ${esc(tn(code, 'articles', lessonPath(graph, topicsData, [tp.id], { lang: code }).length))}</span><br><span class="desc">${topicText(tp, code, 'description')}</span></li>`).join('')}</ul>` });
     for (const tp of codeTopics) {
       const topicHref = (c) => (!c ? `../${tp.id}.html` : c === code ? `${tp.id}.html` : (lessonPath(graph, topicsData, [tp.id], { lang: c }).length ? `../${c}/${tp.id}.html` : null));
       const [ptA, ptB] = t(code, 'pathTitle').split('{title}');
-      out[`paths/${code}/${tp.id}.html`] = page({ title: `${t(code, 'pathTitle', { title: tp.title })} (${langName(code)})`, base: '../../', lang: code, current: 'paths/index.html', scripts: ['paths.js'], body: `<h1>${esc(ptA)}${en(tp.title)}${esc(ptB ?? '')} (${esc(langName(code))})</h1>
+      out[`paths/${code}/${tp.id}.html`] = page({ title: `${t(code, 'pathTitle', { title: tp.i18n?.[code]?.title || tp.title })} (${langName(code)})`, base: '../../', lang: code, current: 'paths/index.html', scripts: ['paths.js'], body: `<h1>${esc(ptA)}${topicText(tp, code)}${esc(ptB ?? '')} (${esc(langName(code))})</h1>
 ${langFilterNav(code, topicHref, code)}
-<p>${en(tp.description)}</p>
+<p>${topicText(tp, code, 'description')}</p>
 <h2>${esc(t(code, 'readingOrder'))}</h2>
 ${pathList(lessonPath(graph, topicsData, [tp.id], { lang: code }), ctx, '../../', code)}` });
     }

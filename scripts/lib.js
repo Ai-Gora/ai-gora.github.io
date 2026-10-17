@@ -267,8 +267,8 @@ export function buildOutputs(content) {
     topics: a.fm.topics, level: a.fm.level, lang: a.fm.lang, status: a.fm.status, confidence: a.fm.confidence,
     updated: a.fm.updated, review_after: a.fm.review_after, md: `a/${a.fm.slug}.md`, json: `a/${a.fm.slug}.json`,
   })));
-  put('data/topics.json', [...topics.values()].sort((x, y) => x.id.localeCompare(y.id)).map(({ id, title, description, parent, related }) => ({
-    id, title, description, parent: parent || null, related: related || [],
+  put('data/topics.json', [...topics.values()].sort((x, y) => x.id.localeCompare(y.id)).map(({ id, title, description, i18n, parent, related }) => ({
+    id, title, description, ...(i18n ? { i18n } : {}), parent: parent || null, related: related || [],
     articles: sorted.filter((a) => a.fm.topics.includes(id)).map((a) => a.fm.slug),
   })));
   put('data/backlinks.json', backlinks);

@@ -29,6 +29,8 @@ const PAIRS = [
   ['on-action', 'action', 4.5], ['surface', 'link', 4.5],
   ['success', 'surface', 4.5], ['error', 'surface', 4.5], ['surface', 'success', 4.5],
   ['action', 'surface', 3], ['focus', 'surface', 3], ['border', 'surface', 3], ['border', 'surface-raised', 3],
+  // Merged from main/#12: diagram captions and scroll regions, Mermaid source blocks, table borders.
+  ['text-muted', 'surface-raised', 4.5], ['focus', 'surface-sunk', 3], ['border', 'surface-sunk', 3], ['link', 'surface-raised', 4.5],
 ];
 
 test('contrast test reads both token blocks', () => {

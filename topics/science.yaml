@@ -3,3 +3,7 @@ title: Science
 description: Natural sciences.
 parent: null
 related: [history]
+i18n:
+  sl:
+    title: Znanost
+    description: Naravoslovne vede.

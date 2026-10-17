@@ -67,7 +67,7 @@ The organism, a whole living person, is the highest level.[^2]
 The diagram shows how each level builds on the level before it.[^2]
 
 ```mermaid
-flowchart LR
+flowchart TD
   accTitle: Six levels of organisation of the human body
   accDescr: Six levels from simple to complex. Chemical, then cellular, then tissue, then organ, then organ system, then organism.
   A[Chemical] --> B[Cellular] --> C[Tissue] --> D[Organ] --> E[Organ system] --> F[Organism]

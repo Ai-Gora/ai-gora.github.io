@@ -251,14 +251,14 @@ test('SL quiz page is fully Slovenian, with and without JS', () => {
 
 test('SL article and path chrome; English pages unchanged; English topic text marked lang="en"', () => {
   const sl = site['a/belokranjska-narecja.html'];
-  for (const s of ['<strong>Na kratko:</strong>', '<dt>Avtorji</dt>', '<dt>Stanje</dt>', 'aria-label="Vir 1"', '>Povezave na ta članek<', '· Licenca CC-BY-SA-4.0', '<span lang="en">']) assert.ok(sl.includes(s), s);
+  for (const s of ['<strong>Na kratko:</strong>', '<dt>Avtorji</dt>', '<dt>Stanje</dt>', 'aria-label="Vir 1"', '>Povezave na ta članek<', '· Licenca CC-BY-SA-4.0', '<a href="../paths/sl/linguistics.html">Jezikoslovje</a>, <a href="../paths/sl/slovenia.html">Slovenija</a>']) assert.ok(sl.includes(s), s);
   assert.ok(!sl.includes('In short:') && !sl.includes('<header class="site" lang="en">'));
   const en = site['a/bela-krajina-dialects.html'];
   for (const s of ['<strong>In short:</strong>', 'Skip to content', 'aria-label="Source 1"', '>What links here<']) assert.ok(en.includes(s), s);
   const p = site['paths/sl/index.html'];
   assert.match(p, /<html lang="sl">/);
   assert.match(p, /<h1>Učne poti \(Slovenščina\)<\/h1>/);
-  assert.match(p, /<a href="[a-z-]+\.html"><span lang="en">/);
+  assert.match(p, /<a href="linguistics\.html">Jezikoslovje<\/a>[^<]*<span class="muted">[^<]*<\/span><br><span class="desc">Veda o jeziku in njegovi zgradbi\.<\/span>/);
   assert.match(p, /· \d+ člank/);
   assert.match(site['paths/sl/linguistics.html'], /<h2>Vrstni red branja<\/h2>/);
   assert.match(site['paths/en/index.html'], /<html lang="en">[\s\S]*<h1>Lesson paths \(English\)<\/h1>/);
@@ -321,4 +321,28 @@ test('lesson path and search carry the enhancement hooks', () => {
   assert.ok(site['paths/linguistics.html'].includes('class="step" data-slug="'));
   assert.ok(site['search.html'].includes('placeholder=" "'));
   assert.ok(site['search.html'].includes('<span class="caret" aria-hidden="true"></span>'));
+});
+
+test('QA: SL pages use the topics\' Slovenian titles/descriptions; missing ones fall back to English with lang="en"', () => {
+  for (const [f, tags] of [['a/osnove-cloveske-anatomije.html', 'Biologija</a>, <a href="../paths/sl/science.html">Znanost</a>'], ['a/upravna-delitev-drzav-eu.html', 'Geografija</a>, <a href="../paths/sl/slovenia.html">Slovenija</a>'], ['a/belokranjska-narecja.html', 'Jezikoslovje</a>, <a href="../paths/sl/slovenia.html">Slovenija</a>']]) {
+    const kicker = site[f].match(/<p class="kicker">.*<\/p>/)[0];
+    assert.ok(kicker.includes(tags), `${f}: ${kicker}`);
+    assert.ok(!/Biology|Science|Geography|Slovenia<|Linguistics|lang="en"/.test(kicker), kicker);
+  }
+  assert.match(site['paths/sl/biology.html'], /<title>Učna pot: Biologija \(Slovenščina\)/);
+  assert.match(site['paths/sl/biology.html'], /<h1>Učna pot: Biologija \(Slovenščina\)<\/h1>[\s\S]*<p>Veda o živih organizmih\.<\/p>/);
+  // English pages are unchanged.
+  assert.match(site['a/human-anatomy-basics.html'], /<p class="kicker">Intro · <a href="\.\.\/paths\/biology\.html">Biology<\/a>, <a href="\.\.\/paths\/science\.html">Science<\/a><\/p>/);
+  assert.match(site['paths/biology.html'], /<h1>Lesson path: Biology<\/h1>/);
+  // data/topics.json carries the optional i18n field.
+  assert.deepEqual(JSON.parse(data['data/topics.json']).find((x) => x.id === 'biology').i18n, { sl: { title: 'Biologija', description: 'Veda o živih organizmih.' } });
+  // Fallback: no Slovenian title -> English, marked lang="en"; no Slovenian description -> English description.
+  const c = loadContent(REPO).content;
+  delete c.topics.get('linguistics').i18n;
+  c.topics.get('slovenia').i18n = { sl: { title: 'Slovenija' } };
+  const o2 = buildOutputs(c);
+  const s2 = buildSite(c, o2);
+  assert.ok(s2['a/belokranjska-narecja.html'].includes('<a href="../paths/sl/linguistics.html"><span lang="en">Linguistics</span></a>, <a href="../paths/sl/slovenia.html">Slovenija</a>'));
+  assert.match(s2['paths/sl/linguistics.html'], /<h1>Učna pot: <span lang="en">Linguistics<\/span> \(Slovenščina\)<\/h1>/);
+  assert.match(s2['paths/sl/slovenia.html'], /<p><span lang="en">The country, its regions, people and languages\.<\/span><\/p>/);
 });

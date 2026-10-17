@@ -1,6 +1,11 @@
 // Renders Mermaid diagrams with the self-hosted build (assets/vendor/mermaid.min.js). Loaded only on pages with a diagram.
 // Without JS (or if rendering fails) the page keeps the source block and the accTitle/accDescr caption.
 import { mermaidProblems, MERMAID_SECURE } from './mermaid-guard.js';
+import { t } from './i18n.js';
+
+// Mermaid's labels are 16px; never scale a diagram below 0.75 of its natural width, so labels stay >= 12px.
+// Wider diagrams scroll inside a focusable region instead of shrinking (small screens).
+const MIN_SCALE = 0.75;
 
 const blocks = [...document.querySelectorAll('pre[data-mermaid]')];
 
@@ -27,6 +32,12 @@ if (blocks.length) {
         const div = document.createElement('div');
         div.className = 'diagram-render';
         div.innerHTML = svg; // produced by Mermaid with securityLevel 'strict' (sanitised labels, no scripts)
+        const el = div.querySelector('svg');
+        const width = el?.viewBox?.baseVal?.width;
+        if (width) el.style.minWidth = `${Math.ceil(width * MIN_SCALE)}px`;
+        div.tabIndex = 0; // keyboard users can scroll a wide diagram
+        div.setAttribute('role', 'region');
+        div.setAttribute('aria-label', el?.querySelector('title')?.textContent.trim() || t(document.documentElement.lang, 'diagram'));
         pre.before(div);
         pre.hidden = true;
       } catch (e) { console.warn('diagram not rendered', e); }
