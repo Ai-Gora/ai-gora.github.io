@@ -1,0 +1,28 @@
+article: aig-000006
+questions:
+  - id: q1
+    type: single
+    prompt: V katero narečno skupino spadata obe belokranjski narečji?
+    options: [dolenjsko, gorenjsko, panonsko, primorsko]
+    answer: 0
+    explain: Uradna karta ZRC SAZU severnobelokranjsko in južnobelokranjsko narečje uvršča v dolenjsko narečno skupino.
+    ref: belokranjska-narecja#classification
+    difficulty: 1
+    tags: [narečja, uvrstitev]
+  - id: q2
+    type: single
+    prompt: Kateri kraj leži na območju severnobelokranjskega narečja?
+    options: [Vinica, Metlika, Stari trg ob Kolpi, Dragatuš]
+    answer: 1
+    explain: Severnobelokranjsko narečje se govori v okolici Semiča, Črnomlja in Metlike; drugi trije kraji so na jugu.
+    ref: belokranjska-narecja#north
+    difficulty: 2
+    tags: [narečja, zemljepis]
+  - id: q3
+    type: true_false
+    prompt: Srbohrvaški vpliv je v južnobelokranjskem narečju močnejši kot v severnobelokranjskem.
+    answer: true
+    explain: Štokavski vplivi so na severu manjši, na jugu pa precej večji.
+    ref: belokranjska-narecja#south
+    difficulty: 1
+    tags: [narečja, jezikovni stik]

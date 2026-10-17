@@ -1,0 +1,28 @@
+article: aig-000008
+questions:
+  - id: q1
+    type: single
+    prompt: Na kateri ravni NUTS so določene regije, upravičene do sredstev kohezijske politike EU?
+    options: [NUTS 1, NUTS 2, NUTS 3]
+    answer: 1
+    explain: Po navedbah Eurostata je upravičenost do kohezijske politike določena na ravni NUTS 2.
+    ref: upravna-delitev-drzav-eu#nuts
+    difficulty: 2
+    tags: [nuts, eu]
+  - id: q2
+    type: true_false
+    prompt: Slovenija ima ustanovljene pokrajine kot raven lokalne samouprave.
+    answer: false
+    explain: Ustava pokrajine predvideva, vendar še niso ustanovljene; občine so edina raven lokalne samouprave.
+    ref: upravna-delitev-drzav-eu#slovenia
+    difficulty: 1
+    tags: [slovenija]
+  - id: q3
+    type: single
+    prompt: Koliko regij ima Francija?
+    options: ["13", "18", "101"]
+    answer: 1
+    explain: Francija ima 18 regij, 13 v celinski Franciji in 5 čezmorskih; 101 je število departmajev.
+    ref: upravna-delitev-drzav-eu#examples
+    difficulty: 1
+    tags: [francija, primeri]

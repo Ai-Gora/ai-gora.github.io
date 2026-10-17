@@ -1,0 +1,29 @@
+article: aig-000005
+questions:
+  - id: q1
+    type: multi
+    prompt: Katere od naštetih so med štirimi glavnimi vrstami tkiv?
+    options: [epitelijsko, vezivno, limfno, živčno]
+    answer: [0, 1, 3]
+    explain: Glavne vrste tkiv so epitelijsko, vezivno, mišično in živčno. »Limfni« je ime organskega sistema, ne vrste tkiva.
+    ref: osnove-cloveske-anatomije#tissues
+    difficulty: 2
+    tags: [tkiva]
+  - id: q2
+    type: single
+    prompt: Katera ravnina deli telo na sprednji in zadnji del?
+    options: [sagitalna ravnina, frontalna (koronalna) ravnina, prečna ravnina]
+    answer: 1
+    explain: Frontalna ali koronalna ravnina poteka od ene strani do druge in loči sprednji (anteriorni) del od zadnjega (posteriornega).
+    ref: osnove-cloveske-anatomije#planes
+    difficulty: 2
+    tags: [ravnine, izrazje]
+  - id: q3
+    type: single
+    prompt: Koliko poimenovanih kosti ima običajno okostje odraslega človeka?
+    options: ["126", "206", "300"]
+    answer: 1
+    explain: Okostje odraslega ima običajno 206 poimenovanih kosti, 80 v osnem skeletu in 126 v skeletu okončin.
+    ref: osnove-cloveske-anatomije#skeleton
+    difficulty: 1
+    tags: [okostje]

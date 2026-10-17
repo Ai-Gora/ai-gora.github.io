@@ -2,10 +2,27 @@ article: aig-000003
 questions:
   - id: q1
     type: single
-    prompt: Which town is the centre of the Metlika dialect?
-    options: [Metlika, Črnomelj, Semič]
+    prompt: Which dialect group do both Bela Krajina dialects belong to?
+    options: [Lower Carniolan, Upper Carniolan, Pannonian, Littoral]
     answer: 0
-    explain: The Metlika dialect is named after and centred on Metlika.
-    ref: bela-krajina-dialects#metlika
+    explain: The official ZRC SAZU map puts the North and South Bela Krajina dialects in the Lower Carniolan dialect group.
+    ref: bela-krajina-dialects#classification
     difficulty: 1
+    tags: [dialects, classification]
+  - id: q2
+    type: single
+    prompt: Which town lies in the North Bela Krajina dialect area?
+    options: [Vinica, Metlika, Stari trg ob Kolpi, Dragatuš]
+    answer: 1
+    explain: The northern dialect is spoken around Semič, Črnomelj and Metlika; the other three places are in the south.
+    ref: bela-krajina-dialects#north
+    difficulty: 2
     tags: [dialects, geography]
+  - id: q3
+    type: true_false
+    prompt: Serbo-Croatian influence is stronger in the South Bela Krajina dialect than in the northern one.
+    answer: true
+    explain: Shtokavian influence is smaller in the north and much larger in the south.
+    ref: bela-krajina-dialects#south
+    difficulty: 1
+    tags: [dialects, language-contact]

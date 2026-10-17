@@ -7,3 +7,4 @@ One line per mistake hit while building Aigora, so it is not repeated.
 - `rmSync(out, {recursive, force})` on an unchecked `--out` can wipe the repo (`--out .`); always resolve and require the target strictly inside the repo root first.
 - Every page has a header search form, so `button[type=submit]` matches the header button first; scope selectors and tests to the form (`#quiz button[type=submit]`).
 - Validating names alone does not stop overwrites: a topic id `index` replaced `paths/index.html` inside the site builder, so output maps must refuse a path that is written twice (`mergeOutputs` and the guard in `buildSite`).
+- Site/validator tests pin the sample articles (headings, source order, lesson-path lists, node counts); rewriting a sample article or adding one in the same topic means updating those assertions in the same PR.
