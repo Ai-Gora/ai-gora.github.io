@@ -10,12 +10,13 @@ const ASSET_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 
 
 export const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 const safeUrl = (u) => (/^(https?:\/\/|mailto:|#|\.{0,2}\/|[a-z0-9-]+\.html)/i.test(u) && !/^\s*javascript:/i.test(u) ? u : '#');
+const NUL = String.fromCharCode(0);
 
 /** Inline Markdown: code, wikilinks, links, bold, italics, [^n] citations. Input is raw text; output is safe HTML. */
 export function renderInline(text, ctx) {
   return text.split(/(`[^`\n]+`)/).map((part, i) => {
     if (i % 2) return `<code>${esc(part.slice(1, -1))}</code>`;
-    let s = esc(part);
+    let s = esc(part).replaceAll(NUL, ''); // NUL is reserved for tag placeholders below
     s = s.replace(/\[\[([^\]|#]+)(?:#([^\]|]+))?(?:\|([^\]]+))?\]\]/g, (_m, slug, anchor, txt) => {
       slug = slug.trim();
       const title = ctx.titleOf(slug);
@@ -23,7 +24,10 @@ export function renderInline(text, ctx) {
       return `<a href="${href}">${txt ? txt.trim() : esc(title || slug)}</a>`;
     });
     s = s.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (_m, txt, url) => `<a href="${safeUrl(url)}">${txt}</a>`);
-    s = s.split(/(<[^>]+>)/).map((seg, j) => (j % 2 ? seg : seg.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>').replace(/(^|[\s(])\*([^*\s][^*]*)\*/g, '$1<em>$2</em>'))).join('');
+    const tags = [];
+    s = s.replace(/<[^>]+>/g, (tag) => `${NUL}${tags.push(tag) - 1}${NUL}`);
+    s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>').replace(new RegExp(`(^|[\\s(]|${NUL})\\*([^*\\s][^*]*)\\*`, 'g'), '$1<em>$2</em>');
+    s = s.replace(new RegExp(`${NUL}(\\d+)${NUL}`, 'g'), (_m, n) => tags[n]);
     s = s.replace(/\[\^(\d+)\]/g, (_m, n) => `<sup class="cite"><a href="#source-${n}" aria-label="Source ${n}">[${n}]</a></sup>`);
     return s;
   }).join('');

@@ -46,6 +46,19 @@ test('inline renderer keeps emphasis out of link hrefs', () => {
   assert.ok(html.includes('<em>em</em>'));
 });
 
+test('inline renderer spans emphasis across links and wikilinks', () => {
+  const ctx = { base: '../', titleOf: (s) => s };
+  const bold = renderInline('**a [l](https://u.org) b**', ctx);
+  assert.ok(bold.includes('<strong>a <a href="https://u.org">l</a> b</strong>'));
+  assert.ok(!bold.includes('*'));
+  assert.match(renderInline('*see [[photosynthesis]] now*', ctx), /<em>see <a href="\.\.\/a\/photosynthesis\.html">photosynthesis<\/a> now<\/em>/);
+  assert.ok(renderInline('*[[photosynthesis]]*', ctx).startsWith('<em><a '));
+  const mixed = renderInline('[x](https://e.org/a*b*c) and *em*', ctx);
+  assert.ok(mixed.includes('href="https://e.org/a*b*c"'));
+  assert.ok(mixed.includes('<em>em</em>'));
+  assert.equal(renderInline('2 * 3 * 4', ctx), '2 * 3 * 4');
+});
+
 test('quiz page works without JS: labelled inputs and a Show answer disclosure', () => {
   const html = site['quiz/printing-press.html'];
   assert.match(html, /<legend>Gutenberg developed/);
