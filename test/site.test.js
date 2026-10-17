@@ -275,3 +275,13 @@ test('diagram.js is chosen from the rendered HTML, so a fence written "``` merma
   assert.match(s2['a/photosynthesis.html'], /assets\/diagram\.js/);
   assert.ok(!site['a/photosynthesis.html'].includes('diagram.js'));
 });
+
+test('pages with a diagram send a same-origin Content-Security-Policy first in <head>; others do not', () => {
+  const withDiagram = Object.entries(site).filter(([f, h]) => f.endsWith('.html') && h.includes('assets/diagram.js'));
+  assert.ok(withDiagram.length >= 6);
+  for (const [f, h] of withDiagram) {
+    const head = h.slice(h.indexOf('<head>'), h.indexOf('</head>'));
+    assert.match(head, /^<head>\n<meta charset="utf-8">\n<meta http-equiv="Content-Security-Policy" content="default-src &#39;self&#39;; img-src &#39;self&#39; data:; connect-src &#39;self&#39;; font-src &#39;self&#39;; style-src &#39;self&#39; &#39;unsafe-inline&#39;; script-src &#39;self&#39;; object-src &#39;none&#39;; base-uri &#39;none&#39;">\n/, f);
+  }
+  for (const [f, h] of Object.entries(site)) if (f.endsWith('.html') && !h.includes('assets/diagram.js')) assert.ok(!h.includes('Content-Security-Policy'), f);
+});

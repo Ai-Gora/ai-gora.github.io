@@ -125,14 +125,19 @@ export function renderBlocks(text, ctx) {
 
 const NAV = [['index.html', 'navHome'], ['search.html', 'navSearch'], ['paths/index.html', 'navPaths'], ['quiz/index.html', 'navQuizzes']];
 
-function page({ title, base, lang = 'en', current, body, head = '', scripts = [], description = '' }) {
+// Pages that run Mermaid only load same-origin resources, so a gap in the source guard still can't fetch anything outside.
+// img-src allows data: only for the page's blank favicon (<link rel="icon" href="data:,">); data: never makes a request, and the guard rejects data: in diagram sources.
+// Inline JSON-LD (type application/ld+json) is a data block, not executed, so script-src 'self' doesn't affect it.
+export const DIAGRAM_CSP = "default-src 'self'; img-src 'self' data:; connect-src 'self'; font-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; object-src 'none'; base-uri 'none'";
+
+function page({ title, base, lang = 'en', current, body, head = '', scripts = [], description = '', csp = '' }) {
   const L = (k) => esc(t(lang, k));
   const nav = NAV.map(([href, key]) => `<li><a href="${base}${href}"${current === href ? ' aria-current="page"' : ''}>${L(key)}</a></li>`).join('');
   return `<!doctype html>
 <html lang="${esc(lang)}">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+${csp ? `<meta http-equiv="Content-Security-Policy" content="${esc(csp)}">\n` : ''}<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${esc(title)}${title === SITE_NAME ? '' : ` · ${SITE_NAME}`}</title>
 ${description ? `<meta name="description" content="${esc(description)}">\n` : ''}<link rel="icon" href="data:,">
 <link rel="stylesheet" href="${base}assets/style.css">
@@ -221,7 +226,7 @@ ${quiz ? `<p><a class="button" href="../quiz/${fm.slug}.html">${L('takeQuiz', { 
 <p class="muted">ID <code>${esc(fm.id)}</code> · ${L('licence')} ${esc(fm.license)} · <a href="${fm.slug}.md">${L('markdownSource')}</a> · <a href="${fm.slug}.json">JSON</a> · <a href="https://github.com/Ai-Gora/ai-gora.github.io/commits/main/${esc(path.relative(ctx.root, a.file).split(path.sep).join('/'))}">${L('history')}</a></p>
 </footer>
 </article>`;
-  return page({ title: fm.title, base: '../', lang: fm.lang, scripts: html.includes('data-mermaid') ? ['diagram.js'] : [], body: html, description: fm.summary.trim(), head: `${canonical}${altLinks}<script type="application/ld+json">\n${safeJson(jsonLd(a))}</script>\n` });
+  return page({ title: fm.title, base: '../', lang: fm.lang, ...(html.includes('data-mermaid') ? { scripts: ['diagram.js'], csp: DIAGRAM_CSP } : {}), body: html, description: fm.summary.trim(), head: `${canonical}${altLinks}<script type="application/ld+json">\n${safeJson(jsonLd(a))}</script>\n` });
 }
 
 function questionHtml(q, slug, ctx, lang = 'en') {
