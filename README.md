@@ -51,7 +51,7 @@ Paths are relative to the site root.
 | `data/articles.json` | `[{ id, slug, title, summary, category, topics[], level, lang, status, confidence, updated, review_after, md, json }]` |
 | `data/topics.json` | `[{ id, title, description, parent: string\|null, related[], articles: slug[] }]` |
 | `data/backlinks.json` | `{ [slug]: [{ slug, id, title }] }` ("What links here"; every article has a key) |
-| `data/graph.json` | `{ nodes: [{ id, slug, title, topics[], level, links: slug[], prerequisites: slug[], quizzes: "slug/qN"[], sections: anchor[] }], edges: [{ from, to, anchor\|null, type: "link"\|"prerequisite" }] }` |
+| `data/graph.json` | `{ nodes: [{ id, slug, title, topics[], level, lang, translations: { [lang]: slug }, links: slug[], prerequisites: slug[], quizzes: "slug/qN"[], sections: anchor[] }], edges: [{ from, to, anchor\|null, type: "link"\|"prerequisite" }] }` |
 | `data/search-index.json` | `[{ id: "slug#anchor", article, slug, anchor\|null, title, heading\|null, topics[], authors[], ai_assisted, level, lang, updated, license, text }]`, one chunk per section, plain text. Load into a client-side engine (Lunr, MiniSearch, Pagefind) in the browser. |
 | `data/quizzes/index.json` | `[{ slug, article, questions: number, file }]` |
 | `data/quizzes/<slug>.json` | `{ article, slug, questions: [{ id, type, prompt, options?, answer, explain?, ref: "slug#anchor", difficulty?, tags? }] }` |

@@ -4,7 +4,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { loadContent, buildOutputs } from '../scripts/lib.js';
 import { buildSite, renderInline, esc } from '../scripts/site.js';
-import { lessonPath, expandTopics } from '../web/assets/lesson-path.js';
+import { lessonPath, expandTopics, pathLanguages } from '../web/assets/lesson-path.js';
 
 const REPO = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const { content } = loadContent(REPO);
@@ -76,6 +76,40 @@ test('lesson path: interests include sub-topics and prerequisites come first', (
   assert.ok(mixed.indexOf('printing-press') < mixed.indexOf('bela-krajina-dialects'));
   assert.deepEqual(lessonPath(graph, topics, ['nothing']), []);
   assert.match(site['paths/linguistics.html'], /<ol class="path">[\s\S]*printing-press[\s\S]*bela-krajina-dialects/);
+});
+
+test('graph nodes expose lang and translation slugs', () => {
+  for (const n of graph.nodes) {
+    assert.equal(typeof n.lang, 'string');
+    assert.equal(typeof n.translations, 'object');
+  }
+  const en = graph.nodes.find((n) => n.slug === 'bela-krajina-dialects');
+  assert.equal(en.lang, 'en');
+  assert.equal(en.translations.sl, 'belokranjska-narecja');
+});
+
+test('lesson path filters by language and swaps translated prerequisites', () => {
+  const sl = lessonPath(graph, topics, ['linguistics'], { lang: 'sl' });
+  const slugs = sl.map((s) => s.slug);
+  assert.ok(slugs.includes('belokranjska-narecja'));
+  assert.ok(!slugs.includes('bela-krajina-dialects'));
+  for (const s of sl.filter((x) => x.reason === 'interest')) assert.equal(s.lang, 'sl');
+
+  assert.deepEqual(lessonPath(graph, topics, ['linguistics'], { lang: 'en' }).map((s) => [s.slug, s.reason]), [['printing-press', 'prerequisite'], ['bela-krajina-dialects', 'interest']]);
+
+  const both = lessonPath(graph, topics, ['linguistics']).map((s) => s.slug);
+  assert.ok(both.includes('bela-krajina-dialects') && both.includes('belokranjska-narecja'));
+
+  assert.deepEqual(pathLanguages(graph), ['en', 'sl']);
+});
+
+test('lesson path replaces a foreign prerequisite with its existing translation', () => {
+  const g = { nodes: [
+    { slug: 'a-sl', id: 'a-sl', title: 'A sl', topics: ['other'], level: 'intro', lang: 'sl', prerequisites: [], sections: [], quizzes: [] },
+    { slug: 'a-en', id: 'a-en', title: 'A en', topics: ['other'], level: 'intro', lang: 'en', translations: { sl: 'a-sl' }, prerequisites: [], sections: [], quizzes: [] },
+    { slug: 'b-sl', id: 'b-sl', title: 'B sl', topics: ['t'], level: 'intro', lang: 'sl', prerequisites: ['a-en'], sections: [], quizzes: [] },
+  ], edges: [] };
+  assert.deepEqual(lessonPath(g, [{ id: 't', parent: null }], ['t'], { lang: 'sl' }).map((s) => [s.slug, s.reason]), [['a-sl', 'prerequisite'], ['b-sl', 'interest']]);
 });
 
 test('lesson path tolerates prerequisite cycles', () => {

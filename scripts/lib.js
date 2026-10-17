@@ -238,6 +238,8 @@ export function buildOutputs(content) {
   put('data/graph.json', {
     nodes: sorted.map((a) => ({
       id: a.fm.id, slug: a.fm.slug, title: a.fm.title, topics: a.fm.topics, level: a.fm.level,
+      lang: a.fm.lang,
+      translations: Object.fromEntries(Object.entries(a.fm.translations || {}).map(([lang, id]) => [lang, content.byId.get(id)?.fm.slug]).filter(([, slug]) => slug)),
       links: [...new Set(a.links.map((l) => l.slug))], prerequisites: a.fm.prerequisites || [],
       quizzes: (quizBySlug.get(a.fm.slug)?.questions || []).map((q) => `${a.fm.slug}/${q.id}`),
       sections: sectionsOf(a).map((s) => s.anchor),
