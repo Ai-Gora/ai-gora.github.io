@@ -364,7 +364,7 @@ test('mermaid: each external-resource pattern is rejected with a clear error', (
   ];
   for (const [lines, reason] of cases) {
     const errs = checkAccessibility(mm(...lines));
-    assert.ok(errs.includes(`line 1: mermaid diagram 1: ${reason} (STYLE V4)`), `${lines.join(' | ')}\n→ ${errs.join('\n')}`);
+    assert.ok(errs.includes(`line 1: mermaid diagram 1: ${reason} (STYLE V8)`), `${lines.join(' | ')}\n→ ${errs.join('\n')}`);
   }
   // The <img> payload from the review is caught twice over (tag and URL).
   assert.deepEqual(mermaidProblems('flowchart LR\n  A["<img src=https://example.com/track.png>"]'), ['HTML is not allowed', 'external URLs are not allowed']);
@@ -383,4 +383,58 @@ test('mermaid: every diagram in the real articles still passes the checks', () =
   const withDiagrams = content.articles.filter((a) => a.body.includes('```mermaid'));
   assert.ok(withDiagrams.length >= 6, 'sample content has diagrams');
   for (const a of withDiagrams) assert.deepEqual(checkAccessibility(a.body).filter((e) => /mermaid/.test(e)), [], a.fm.slug);
+});
+
+// Review #10 round 2: browsers read "\" as "/" and drop tabs/newlines inside URLs; img: shapes and click/href.
+test('mermaid: every bypass payload from both reviews is rejected', () => {
+  const T = '\t';
+  const cases = [
+    // round 1
+    ['  A["<img src=https://example.com/track.png>"]', 'HTML is not allowed'],
+    ['  %%{init: {"themeCSS": ".node rect{fill:url(https://example.com/x.svg)}"}}%%', 'init directive %%{...}%% is not allowed'],
+    ['  click A "https://example.com"', 'click/href statements are not allowed (diagrams are not interactive)'],
+    // round 2, blocking
+    ['  A@{ img: "https:\\/\\/host/a.png" }', 'img: shapes are not allowed'],
+    ['  A@{ img: "https:\\/\\/host/a.png" }', 'backslashes are not allowed'],
+    ['  A@{ IMG : "/a.png" }', 'img: shapes are not allowed'],
+    ['  A["/\\\\host/a.png"]', 'backslashes are not allowed'],
+    [`  A["ht${T}tps:/${T}/host/a.png"]`, 'external URLs are not allowed'],
+    ['  A["ht\ntps:/\n/host"]', 'external URLs are not allowed'],
+    ['  A["ht\u200btps://host"]', 'external URLs are not allowed'],
+    [`  A["/${T}/host/a.png"]`, 'external URLs are not allowed'],
+    ['  A["HTTPS:host"]', 'external URLs are not allowed'],
+    // round 2, non-blocking
+    ['  click A href "https:\\\\host"', 'click/href statements are not allowed (diagrams are not interactive)'],
+    ['  click A href "#top"', 'click/href statements are not allowed (diagrams are not interactive)'],
+    ['  click A call alert()', 'click/href statements are not allowed (diagrams are not interactive)'],
+    // variants Sentry confirmed, kept covered
+    ['  %%{ INIT: {"theme":"dark"} }%%', 'init directive %%{...}%% is not allowed'],
+    ['  %% {init: {"theme":"dark"}}%%', 'init directive %%{...}%% is not allowed'],
+    ['  A["#lt;img src=x#gt;"]', 'HTML is not allowed'],
+    ['  A["&#60;img src=x&#62;"]', 'HTML is not allowed'],
+    ['  A["&#x3C;b&#x3E;"]', 'HTML is not allowed'],
+    ['  A["#47;#47;host#47;a.png"]', 'numeric character codes (#nn; / &#nn;) are not allowed'],
+    ['  A["HTTPS://example.com"]', 'external URLs are not allowed'],
+    ['  style A fill:u\\72l(https://example.com/a.png)', 'backslashes are not allowed'],
+    ['  style A fill:URL ( #x )', 'url() is not allowed'],
+    ['  classDef c fill:url(#x)', 'url() is not allowed'],
+    ['  A["data:image/png;base64,AAAA"]', 'data:/javascript: URLs are not allowed'],
+    ['  A["java\tscript:alert(1)"]', 'data:/javascript: URLs are not allowed'],
+  ];
+  for (const [line, reason] of cases) {
+    const src = [...SAFE, '  A --> B', line].join('\n');
+    assert.ok(mermaidProblems(src).includes(reason), `${JSON.stringify(line)} → ${JSON.stringify(mermaidProblems(src))}`);
+    assert.ok(checkAccessibility(mm(src)).includes(`line 1: mermaid diagram 1: ${reason} (STYLE V8)`), JSON.stringify(line));
+  }
+  // --- config blocks: after blank lines, after a BOM, indented, front-matter themeCSS
+  for (const pre of ['', '\n\n', '\ufeff', '  ']) {
+    const src = `${pre}---\nconfig:\n  themeCSS: ".x{background:url(https://example.com/y.png)}"\n---\n${SAFE.join('\n')}`;
+    assert.ok(mermaidProblems(src).includes('--- config block is not allowed'), JSON.stringify(pre));
+  }
+});
+
+test('mermaid: plain words and arrows still pass the stricter guard', () => {
+  for (const label of ['HTTP GET', 'https reply', 'a < b', 'C -.-> D', 'images and data', 'A ratio 3:4', '50% #1']) {
+    assert.deepEqual(mermaidProblems([...SAFE, `  A["${label}"] --> B`, '  B <--> C', '  C ==> D', '  D -->|yes| E'].join('\n')), [], label);
+  }
 });
