@@ -1,5 +1,5 @@
 // Quiz checking from data/quizzes/<slug>.json. Without JS each question has a "Show answer" disclosure.
-import { isCorrect } from './quiz-check.js';
+import { questionState } from './quiz-check.js';
 
 const form = document.getElementById('quiz');
 
@@ -18,13 +18,13 @@ if (form) {
       const fs = form.querySelector(`[data-qid="${q.id}"]`);
       if (!fs) continue;
       const values = [...fs.querySelectorAll('input')].filter((i) => (i.type === 'radio' || i.type === 'checkbox' ? i.checked : i.value.trim())).map((i) => i.value);
-      const ok = isCorrect(q, values);
-      if (ok) right++;
+      const st = questionState(q, values);
+      if (st.ok) right++;
       const fb = fs.querySelector('[data-feedback]');
       fb.hidden = false;
-      fb.className = `feedback ${ok ? 'ok' : 'bad'}`;
-      fb.textContent = ok ? '✓ Correct.' : values.length ? '✗ Not quite. See the answer below.' : '✗ Not answered. See the answer below.';
-      if (!ok) fs.querySelector('details').open = true;
+      fb.className = `feedback ${st.cls}`;
+      fb.textContent = st.text;
+      fs.querySelector('details').open = st.open;
     }
     status.textContent = `You got ${right} of ${data.questions.length} right.`;
     try { localStorage.setItem(`aigora:quiz:${form.dataset.slug}`, JSON.stringify({ right, total: data.questions.length, at: new Date().toISOString() })); } catch { /* storage unavailable */ }

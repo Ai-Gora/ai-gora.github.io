@@ -8,3 +8,10 @@ export function isCorrect(q, values) {
   if (Array.isArray(q.answer)) return given.split(/[,;]/).map(norm).join('|') === q.answer.map(norm).join('|');
   return norm(given) === norm(q.answer);
 }
+
+export function questionState(q, values) {
+  const ok = isCorrect(q, values);
+  if (ok) return { ok: true, cls: 'ok', open: false, text: '✓ Correct.' };
+  if (!values.length) return { ok: false, cls: 'bad', open: true, text: '✗ Not answered. See the answer below.' };
+  return { ok: false, cls: 'bad', open: true, text: '✗ Not quite. See the answer below.' };
+}
