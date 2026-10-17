@@ -3,7 +3,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { loadContent, buildOutputs, mergeOutputs, resolveOutDir } from './lib.js';
+import { loadContent, buildOutputs, mergeOutputs, mediaOutputs, resolveOutDir } from './lib.js';
 import { buildSite } from './site.js';
 import { buildCharts } from './charts.js';
 
@@ -27,13 +27,13 @@ if (errors.length) {
   for (const e of errors) console.error(`  - ${e}`);
   process.exit(1);
 }
-console.log(`✓ valid: ${content.articles.length} articles, ${content.quizzes.length} quizzes, ${content.topics.size} topics, ${Object.keys(charts.outputs).length} charts`);
-if (writeCharts) { console.log('✓ chart.svg files regenerated'); process.exit(0); }
+console.log(`✓ valid: ${content.articles.length} articles, ${content.quizzes.length} quizzes, ${content.topics.size} topics, ${charts.count} charts`);
+if (writeCharts) { console.log('✓ chart PNGs and render.json regenerated'); process.exit(0); }
 if (check) process.exit(0);
 
 const data = buildOutputs(content);
 try {
-  const files = mergeOutputs(data, buildSite(content, data), charts.outputs);
+  const files = mergeOutputs(data, buildSite(content, data), mediaOutputs(root));
   fs.rmSync(outDir, { recursive: true, force: true });
   for (const [rel, output] of Object.entries(files)) {
     const p = path.join(outDir, rel);

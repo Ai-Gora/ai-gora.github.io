@@ -2,10 +2,10 @@ article: aig-000008
 questions:
   - id: q1
     type: single
-    prompt: Na kateri ravni NUTS so določene regije, upravičene do sredstev kohezijske politike EU?
+    prompt: Na kateri ravni NUTS EU določi regije, ki lahko dobijo sredstva kohezijske politike?
     options: [NUTS 1, NUTS 2, NUTS 3]
     answer: 1
-    explain: Po navedbah Eurostata je upravičenost do kohezijske politike določena na ravni NUTS 2.
+    explain: Po navedbah Eurostata EU te regije določi na ravni NUTS 2.
     ref: upravna-delitev-drzav-eu#nuts
     difficulty: 2
     tags: [nuts, eu]
@@ -13,7 +13,7 @@ questions:
     type: true_false
     prompt: Slovenija ima ustanovljene pokrajine kot raven lokalne samouprave.
     answer: false
-    explain: Ustava pokrajine predvideva, vendar še niso ustanovljene; občine so edina raven lokalne samouprave.
+    explain: Ustava pokrajine predvideva, vendar jih država še ni ustanovila. Občine so edina raven lokalne samouprave.
     ref: upravna-delitev-drzav-eu#slovenia
     difficulty: 1
     tags: [slovenija]
@@ -22,7 +22,16 @@ questions:
     prompt: Koliko regij ima Francija?
     options: ["13", "18", "101"]
     answer: 1
-    explain: Francija ima 18 regij, 13 v celinski Franciji in 5 čezmorskih; 101 je število departmajev.
+    explain: "Francija ima 18 regij: 13 v celinski Franciji in 5 čezmorskih. Število 101 je število departmajev."
     ref: upravna-delitev-drzav-eu#examples
     difficulty: 1
     tags: [francija, primeri]
+  - id: q4
+    type: single
+    prompt: Katera država EU ima v preglednici v tem članku največ enot prve ravni?
+    options: [Nemčija, Slovenija, Ciper]
+    answer: 2
+    explain: Preglednica za Ciper navaja 615 občin in skupnosti, po Eurostatovem seznamu za leto 2022. Slovenija ima 212 občin, Nemčija pa 16 zveznih dežel.
+    ref: upravna-delitev-drzav-eu#first-level-table
+    difficulty: 2
+    tags: [table, eu]

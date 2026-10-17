@@ -19,6 +19,13 @@ export function renderInline(text, ctx) {
   return text.split(/(`[^`\n]+`)/).map((part, i) => {
     if (i % 2) return `<code>${esc(part.slice(1, -1))}</code>`;
     let s = esc(part).replaceAll(NUL, ''); // NUL is reserved for tag placeholders below
+    // Images first (before wikilinks), so alt text stays plain: [[slug|text]] in alt becomes its text.
+    // Only repo media (STYLE V4/L5), rewritten against the page base; anything else is dropped.
+    s = s.replace(/!\[((?:\[\[[^\]]*\]\]|[^\]])*)\]\(([^)\s]+)\)/g, (_m, alt, src) => {
+      const plain = alt.replace(/\[\[([^\]|#]+)(?:#[^\]|]+)?(?:\|([^\]]+))?\]\]/g, (_w, slug, txt) => (txt || slug).trim());
+      const ok = /^media\/[A-Za-z0-9._/-]+\.(png|jpe?g|webp|gif)$/i.test(src) && !src.split('/').includes('..');
+      return ok ? `<img src="${ctx.base}${src}" alt="${plain}" loading="lazy">` : '';
+    });
     s = s.replace(/\[\[([^\]|#]+)(?:#([^\]|]+))?(?:\|([^\]]+))?\]\]/g, (_m, slug, anchor, txt) => {
       slug = slug.trim();
       const title = ctx.titleOf(slug);
@@ -35,7 +42,11 @@ export function renderInline(text, ctx) {
   }).join('');
 }
 
-/** Block Markdown subset: paragraphs, lists, blockquotes, fenced code. Headings are handled per section. */
+const isTableRow = (l) => /^\s*\|.*\|\s*$/.test(l);
+const TABLE_SEP = /^\s*\|(\s*:?-{3,}:?\s*\|)+\s*$/;
+const cells = (l) => l.trim().replace(/^\||\|$/g, '').split('|').map((c) => c.trim());
+
+/** Block Markdown subset: paragraphs, lists, blockquotes, fenced code (Mermaid kept as text), pipe tables, <details> blocks, images. Headings are handled per section. */
 export function renderBlocks(text, ctx) {
   const lines = text.split(/\r?\n/);
   const out = [];
@@ -44,9 +55,27 @@ export function renderBlocks(text, ctx) {
     const line = lines[i];
     if (!line.trim()) { i++; continue; }
     if (/^```/.test(line)) {
+      const lang = line.replace(/^```\s*/, '').trim();
       const buf = []; i++;
       while (i < lines.length && !/^```/.test(lines[i])) buf.push(lines[i++]);
-      i++; out.push(`<pre><code>${esc(buf.join('\n'))}</code></pre>`); continue;
+      i++;
+      out.push(lang === 'mermaid' ? `<pre class="mermaid"><code>${esc(buf.join('\n'))}</code></pre>` : `<pre><code>${esc(buf.join('\n'))}</code></pre>`);
+      continue;
+    }
+    const det = /^<details><summary>(.+)<\/summary>\s*$/.exec(line.trim());
+    if (det) {
+      const buf = []; i++;
+      while (i < lines.length && lines[i].trim() !== '</details>') buf.push(lines[i++]);
+      i++;
+      out.push(`<details><summary>${renderInline(det[1], ctx)}</summary>${renderBlocks(buf.join('\n'), ctx)}</details>`);
+      continue;
+    }
+    if (isTableRow(line) && i + 1 < lines.length && TABLE_SEP.test(lines[i + 1])) {
+      const head = cells(line); i += 2;
+      const rows = [];
+      while (i < lines.length && isTableRow(lines[i])) rows.push(cells(lines[i++]));
+      out.push(`<div class="table-wrap"><table><thead><tr>${head.map((c) => `<th scope="col">${renderInline(c, ctx)}</th>`).join('')}</tr></thead><tbody>${rows.map((r) => `<tr>${r.map((c) => `<td>${renderInline(c, ctx)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`);
+      continue;
     }
     const list = /^\s*([-*]|\d+\.)\s+/.exec(line);
     if (list) {
@@ -60,8 +89,8 @@ export function renderBlocks(text, ctx) {
       while (i < lines.length && /^>\s?/.test(lines[i])) buf.push(lines[i++].replace(/^>\s?/, ''));
       out.push(`<blockquote>${renderBlocks(buf.join('\n'), ctx)}</blockquote>`); continue;
     }
-    const buf = [];
-    while (i < lines.length && lines[i].trim() && !/^(```|>|\s*([-*]|\d+\.)\s+)/.test(lines[i])) buf.push(lines[i++].trim());
+    const buf = [lines[i++].trim()]; // always consume the first line, so a stray pipe row cannot stall the loop
+    while (i < lines.length && lines[i].trim() && !/^(```|>|\s*([-*]|\d+\.)\s+)/.test(lines[i]) && !isTableRow(lines[i]) && !/^<details>/.test(lines[i].trim())) buf.push(lines[i++].trim());
     out.push(`<p>${renderInline(buf.join(' '), ctx)}</p>`);
   }
   return out.join('\n');

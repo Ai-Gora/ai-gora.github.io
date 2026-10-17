@@ -14,7 +14,7 @@ questions:
     prompt: Katera ravnina deli telo na sprednji in zadnji del?
     options: [sagitalna ravnina, frontalna (koronalna) ravnina, prečna ravnina]
     answer: 1
-    explain: Frontalna ali koronalna ravnina poteka od ene strani do druge in loči sprednji (anteriorni) del od zadnjega (posteriornega).
+    explain: Frontalna (koronalna) ravnina poteka od ene strani do druge. Telo deli na sprednji (anteriorni) in zadnji (posteriorni) del.
     ref: osnove-cloveske-anatomije#planes
     difficulty: 2
     tags: [ravnine, izrazje]

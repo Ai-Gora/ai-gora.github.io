@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { loadContent, buildOutputs, SITE_URL } from '../scripts/lib.js';
-import { buildSite, renderInline, esc } from '../scripts/site.js';
+import { buildSite, renderInline, renderBlocks, esc } from '../scripts/site.js';
 import { lessonPath, expandTopics, pathLanguages } from '../web/assets/lesson-path.js';
 
 const REPO = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -12,6 +12,12 @@ const data = buildOutputs(content);
 const site = buildSite(content, data);
 const graph = JSON.parse(data['data/graph.json']);
 const topics = JSON.parse(data['data/topics.json']);
+// bela-krajina-dialects has no prerequisite in the sample content; add one synthetically so the lesson-path tests keep a prerequisite edge.
+const pcontent = loadContent(REPO).content;
+pcontent.bySlug.get('bela-krajina-dialects').fm.prerequisites = ['printing-press'];
+const pdata = buildOutputs(pcontent);
+const psite = buildSite(pcontent, pdata);
+const pgraph = JSON.parse(pdata['data/graph.json']);
 
 test('site emits article, quiz, path, search and home pages plus assets', () => {
   for (const f of ['index.html', 'search.html', 'paths/index.html', 'quiz/index.html', 'a/photosynthesis.html', 'a/printing-press.html', 'a/bela-krajina-dialects.html', 'quiz/photosynthesis.html', 'paths/linguistics.html', 'paths/science.html', 'assets/style.css', 'assets/search.js', 'assets/quiz.js', 'assets/paths.js', 'assets/lesson-path.js']) assert.ok(f in site, `missing ${f}`);
@@ -26,7 +32,8 @@ test('article page: anchors, wikilinks, citations, sources, backlinks, JSON-LD, 
   assert.match(html, /<a href="#source-3" aria-label="Source 3">\[3\]<\/a>/);
   assert.match(html, /<li id="source-3" value="3"><a href="https:\/\/en\.wikipedia\.org\/wiki\/Slovene_dialects">/);
   assert.match(html, /<script type="application\/ld\+json">/);
-  assert.match(html, /Read first[\s\S]*printing-press\.html/);
+  assert.ok(!html.includes('Read first'), 'sample article has no prerequisite');
+  assert.match(psite['a/bela-krajina-dialects.html'], /Read first[\s\S]*printing-press\.html/);
   assert.match(html, /href="\.\.\/quiz\/bela-krajina-dialects\.html"/);
   assert.match(site['a/printing-press.html'], /What links here<\/h2><ul>.*bela-krajina-dialects\.html.*photosynthesis\.html/);
   assert.ok(!/<script(?! type="(module|application\/ld\+json)")/.test(html), 'only module and JSON-LD scripts');
@@ -87,12 +94,13 @@ test('quiz page works without JS: labelled inputs and a Show answer disclosure',
 
 test('lesson path: interests include sub-topics and prerequisites come first', () => {
   assert.deepEqual([...expandTopics(topics, ['science'])].sort(), ['biology', 'science']);
-  const ling = lessonPath(graph, topics, ['linguistics']);
+  const ling = lessonPath(pgraph, topics, ['linguistics']);
   assert.deepEqual(ling.map((s) => [s.slug, s.reason]), [['printing-press', 'prerequisite'], ['bela-krajina-dialects', 'interest'], ['belokranjska-narecja', 'interest']]);
-  const mixed = lessonPath(graph, topics, ['slovenia', 'biology']).map((s) => s.slug);
+  const mixed = lessonPath(pgraph, topics, ['slovenia', 'biology']).map((s) => s.slug);
   assert.ok(mixed.indexOf('printing-press') < mixed.indexOf('bela-krajina-dialects'));
   assert.deepEqual(lessonPath(graph, topics, ['nothing']), []);
-  assert.match(site['paths/linguistics.html'], /<ol class="path">[\s\S]*printing-press[\s\S]*bela-krajina-dialects/);
+  assert.match(psite['paths/linguistics.html'], /<ol class="path">[\s\S]*printing-press[\s\S]*bela-krajina-dialects/);
+  assert.deepEqual(lessonPath(graph, topics, ['linguistics'], { lang: 'en' }).map((s) => s.slug), ['bela-krajina-dialects'], 'no prerequisite in the sample content');
 });
 
 test('graph nodes expose lang and translation slugs', () => {
@@ -112,7 +120,7 @@ test('lesson path filters by language and swaps translated prerequisites', () =>
   assert.ok(!slugs.includes('bela-krajina-dialects'));
   for (const s of sl.filter((x) => x.reason === 'interest')) assert.equal(s.lang, 'sl');
 
-  assert.deepEqual(lessonPath(graph, topics, ['linguistics'], { lang: 'en' }).map((s) => [s.slug, s.reason]), [['printing-press', 'prerequisite'], ['bela-krajina-dialects', 'interest']]);
+  assert.deepEqual(lessonPath(pgraph, topics, ['linguistics'], { lang: 'en' }).map((s) => [s.slug, s.reason]), [['printing-press', 'prerequisite'], ['bela-krajina-dialects', 'interest']]);
 
   const both = lessonPath(graph, topics, ['linguistics']).map((s) => s.slug);
   assert.ok(both.includes('bela-krajina-dialects') && both.includes('belokranjska-narecja'));
@@ -136,7 +144,7 @@ test('site builds a no-JS language filter and per-language lesson path pages', (
   assert.ok(site['paths/sl/index.html'].includes('<a href="index.html" aria-current="page" lang="sl">Slovenščina</a>'), 'sl index marks Slovenščina current');
   assert.ok(site['paths/linguistics.html'].includes('<a href="linguistics.html" aria-current="page">All languages</a>'), 'all-languages path marks All languages current');
   assert.ok(site['paths/linguistics.html'].includes('<h3 lang="en">'), 'steps declare their language');
-  assert.ok(site['paths/linguistics.html'].includes('Intro · English'), 'meta line names the step language');
+  assert.ok(psite['paths/linguistics.html'].includes('Intro · English'), 'meta line names the step language');
 });
 
 test('lesson path replaces a foreign prerequisite with its existing translation', () => {
@@ -175,4 +183,26 @@ test('buildSite throws instead of overwriting a page (topic id "index" bypassing
   const rename = (json) => JSON.stringify(JSON.parse(json), (k, v) => (v === 'linguistics' ? 'index' : v));
   const forged = { ...data, 'data/topics.json': rename(data['data/topics.json']), 'data/graph.json': rename(data['data/graph.json']) };
   assert.throws(() => buildSite(content, forged), /duplicate output path: paths\/index\.html/);
+});
+
+test('renderer: media images, pipe tables, details and mermaid blocks', () => {
+  const ctx = { base: '../', titleOf: (s) => s };
+  assert.equal(renderInline('![Planes of the body](media/a/planes.webp)', ctx), '<img src="../media/a/planes.webp" alt="Planes of the body" loading="lazy">');
+  assert.equal(renderInline('![x](media/a/planes.svg)', ctx), '', 'SVG is never published');
+  assert.equal(renderInline('![x](https://evil.example/x.png)', ctx), '', 'remote images are dropped');
+  assert.equal(renderInline('![x](media/../secret.png)', ctx), '', 'path traversal is dropped');
+  assert.ok(!renderInline('![a" onerror="x](media/a/b.png)', ctx).includes('" onerror'), 'alt text is escaped');
+  const table = renderBlocks('| Country | Units |\n|---|---:|\n| Slovenia | 212 [^1] |\n| *Austria* | 9 |', ctx);
+  assert.match(table, /^<div class="table-wrap"><table><thead><tr><th scope="col">Country<\/th><th scope="col">Units<\/th><\/tr><\/thead><tbody><tr><td>Slovenia<\/td><td>212/);
+  assert.match(table, /<td><em>Austria<\/em><\/td><td>9<\/td><\/tr><\/tbody><\/table><\/div>$/);
+  assert.equal(renderBlocks('| not | a table |', ctx), '<p>| not | a table |</p>', 'a pipe row without a separator stays a paragraph');
+  assert.equal(renderBlocks('<details><summary>Description</summary>\n\n- one\n- two\n</details>', ctx), '<details><summary>Description</summary><ul><li>one</li><li>two</li></ul></details>');
+  assert.equal(renderBlocks('```mermaid\nflowchart LR\n  A --> B\n```', ctx), '<pre class="mermaid"><code>flowchart LR\n  A --&gt; B</code></pre>');
+});
+
+test('a wikilink in image alt text stays plain text (review #9.4)', () => {
+  const ctx = { base: '../', titleOf: (s) => s };
+  assert.equal(renderInline('![Map of [[bela-krajina-dialects|Bela Krajina]] and [[photosynthesis]]](media/a/map.png)', ctx), '<img src="../media/a/map.png" alt="Map of Bela Krajina and photosynthesis" loading="lazy">');
+  assert.ok(!renderInline('![x [[a#b|c]]](media/a/m.png) and [[d]]', ctx).includes('alt="x <a'), 'no <a> inside alt');
+  assert.match(renderInline('![x](media/a/m.png) see [[d]]', ctx), /alt="x" loading="lazy"> see <a href="\.\.\/a\/d\.html">d<\/a>/);
 });

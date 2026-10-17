@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { loadContent, buildOutputs, mergeOutputs, resolveOutDir } from '../scripts/lib.js';
+import { loadContent, buildOutputs, mergeOutputs, mediaOutputs, resolveOutDir } from '../scripts/lib.js';
 
 const REPO = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -83,7 +83,7 @@ test('unknown topic fails', () => {
 });
 
 test('media without licence sidecar fails', () => {
-  const { errors } = fixture((d) => { fs.mkdirSync(path.join(d, 'media/photosynthesis'), { recursive: true }); fs.writeFileSync(path.join(d, 'media/photosynthesis/leaf.png'), 'x'); });
+  const { errors } = fixture((d) => { fs.mkdirSync(path.join(d, 'media/photosynthesis'), { recursive: true }); fs.writeFileSync(path.join(d, 'media/photosynthesis/leaf.png'), Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])); });
   hasError(errors, /image has no licence sidecar leaf.png.license.yaml/);
 });
 
@@ -180,8 +180,8 @@ test("article slug 'index' is reserved", () => {
 
 test('citation inside a ### subsection counts for its ## section', () => {
   const { errors } = fixture((d) => edit(d, PHOTO, (t) => { const n = t.replace(
-    'Almost all oxygen in the atmosphere comes from photosynthesis.[^1]\nPrinted botany texts spread this knowledge after the [[printing-press|printing press]].',
-    'Almost all oxygen in the atmosphere comes from photosynthesis.\nPrinted botany texts spread this knowledge after the [[printing-press|printing press]].\n\n### Detail {#detail}\n\nMost oxygen is made by phytoplankton in the ocean.[^1]'
+    'Photosynthesis produces the oxygen in the atmosphere.[^3]\nPrinted botany texts spread this knowledge after the [[printing-press|printing press]].',
+    'Photosynthesis produces the oxygen in the atmosphere.\nPrinted botany texts spread this knowledge after the [[printing-press|printing press]].\n\n### Detail {#detail}\n\nMost oxygen is made by phytoplankton in the ocean.[^1]'
   ); assert.notEqual(n, t, 'fixture edit must apply'); return n; }));
   assert.deepEqual(errors, []);
 });
@@ -202,4 +202,48 @@ test('article JSON output escapes < and keeps jsonld.headline', () => {
   const out = buildOutputs(content)['a/photosynthesis.json'];
   assert.ok(!out.includes('<'));
   assert.equal(JSON.parse(out).jsonld.headline, 'Photo</script>');
+});
+
+test('a ## Quiz section that points to the quiz file needs no citation (STYLE S2)', () => {
+  const { errors } = fixture((d) => edit(d, PHOTO, (t) => t.replace('## Sources {#sources}', '## Quiz {#quiz}\n\nThe quiz for this article is in `quizzes/photosynthesis.yaml`.\nThe site shows it on the quiz page for this article.\n\n## Sources {#sources}')));
+  assert.deepEqual(errors, []);
+});
+
+test('article images must be existing media/ files', () => {
+  const { errors } = fixture((d) => edit(d, PHOTO, (t) => t.replace('## Sources {#sources}', '![Leaf](media/photosynthesis/leaf.png)\n![Remote](https://example.com/x.png)\n\n## Sources {#sources}')));
+  hasError(errors, /image media\/photosynthesis\/leaf\.png does not exist/);
+  hasError(errors, /image https:\/\/example\.com\/x\.png must be a media\/ path/);
+});
+
+test('committed raster media are copied to the site; sidecars are not published', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'aigora-media-'));
+  fs.mkdirSync(path.join(dir, 'media/a'), { recursive: true });
+  fs.writeFileSync(path.join(dir, 'media/a/photo.webp'), Buffer.concat([Buffer.from('RIFF'), Buffer.alloc(4), Buffer.from('WEBPVP8 ')]));
+  fs.writeFileSync(path.join(dir, 'media/a/photo.webp.license.yaml'), 'file: photo.webp\n');
+  const out = mediaOutputs(dir);
+  assert.deepEqual(Object.keys(out), ['media/a/photo.webp']);
+  assert.ok(Buffer.isBuffer(out['media/a/photo.webp']));
+});
+
+
+test('only a real Quiz pointer is exempt from citations (review #9.3)', () => {
+  const add = (sec) => (d) => edit(d, PHOTO, (t) => { const n = t.replace('## Sources {#sources}', `${sec}\n\n## Sources {#sources}`); assert.notEqual(n, t); return n; });
+  hasError(fixture(add('## Fun facts {#quiz}\n\nPlants are green.')).errors, /section '#quiz' is not a valid quiz pointer: heading must be exactly 'Quiz'/);
+  const ptr = '## Quiz {#quiz}\n\nThe quiz for this article is in `quizzes/photosynthesis.yaml`.';
+  hasError(fixture(add(`${ptr}\n\n### More {#more}\n\nUncited claim.`)).errors, /not a valid quiz pointer: it must not have subsections/);
+  hasError(fixture((d) => { add(ptr)(d); fs.rmSync(path.join(d, 'quizzes/photosynthesis.yaml')); }).errors, /quizzes\/photosynthesis\.yaml does not exist/);
+  const sl = 'articles/geography/upravna-delitev-drzav-eu.md';
+  hasError(fixture((d) => edit(d, sl, (t) => t.replace('## Kviz {#quiz}', '## Quiz {#quiz}'))).errors, /upravna-delitev-drzav-eu\.md: section '#quiz' is not a valid quiz pointer: heading must be exactly 'Kviz'/);
+});
+
+test('the Quiz section body is a fixed form: pointer line, optional fixed phrase, blank lines (review #9 round 2)', () => {
+  const add = (sec) => (d) => edit(d, PHOTO, (t) => { const n = t.replace('## Sources {#sources}', `${sec}\n\n## Sources {#sources}`); assert.notEqual(n, t); return n; });
+  const ptr = 'The quiz for this article is in `quizzes/photosynthesis.yaml`.';
+  assert.deepEqual(fixture(add(`## Quiz {#quiz}\n\n${ptr}`)).errors, [], 'pointer line alone is fine');
+  hasError(fixture(add(`## Quiz {#quiz}\n\n${ptr}\nPlants make 90% of all oxygen.`)).errors, /only the fixed quiz lines are allowed, found: "Plants make 90% of all oxygen\."/);
+  hasError(fixture(add('## Quiz {#quiz}\n\nThe site shows it on the quiz page for this article.')).errors, /it must contain the line: The quiz for this article is in `quizzes\/photosynthesis\.yaml`\./);
+  hasError(fixture(add('## Quiz {#quiz}\n\nThe quiz for this article is in `quizzes/printing-press.yaml`.')).errors, /it must contain the line/);
+  hasError(fixture(add(`## Quiz {#quiz}\n\n${ptr}\n\n- Light is needed.`)).errors, /found: "- Light is needed\."/);
+  const sl = 'articles/geography/upravna-delitev-drzav-eu.md';
+  hasError(fixture((d) => edit(d, sl, (t) => t.replace('Spletno mesto ga prikaže na strani s kvizom za ta članek.', 'Slovenija ima 300 občin.'))).errors, /upravna-delitev-drzav-eu\.md: .*found: "Slovenija ima 300 občin\."/);
 });

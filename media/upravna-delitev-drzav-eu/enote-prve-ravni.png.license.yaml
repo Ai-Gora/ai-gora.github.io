@@ -1,0 +1,12 @@
+file: enote-prve-ravni.png
+title: "Upravne enote prve ravni v 27 državah EU"
+author: Aigora contributors
+source_url: https://github.com/Ai-Gora/ai-gora.github.io/tree/main/charts/upravna-delitev-drzav-eu/enote-prve-ravni
+license: CC-BY-SA-4.0
+license_url: https://creativecommons.org/licenses/by-sa/4.0/
+modified: "rendered by npm run charts from charts/upravna-delitev-drzav-eu/enote-prve-ravni/chart.vl.json (Vega-Lite to SVG to PNG)"
+format: image/png
+width: 1282
+height: 982
+ai_generated: false
+notes: Data source and long description are in charts/upravna-delitev-drzav-eu/enote-prve-ravni/README.md.

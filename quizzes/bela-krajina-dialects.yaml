@@ -14,7 +14,7 @@ questions:
     prompt: Which town lies in the North Bela Krajina dialect area?
     options: [Vinica, Metlika, Stari trg ob Kolpi, Dragatuš]
     answer: 1
-    explain: The northern dialect is spoken around Semič, Črnomelj and Metlika; the other three places are in the south.
+    explain: The northern dialect is spoken around Semič, Črnomelj and Metlika. The other three places are in the south.
     ref: bela-krajina-dialects#north
     difficulty: 2
     tags: [dialects, geography]
