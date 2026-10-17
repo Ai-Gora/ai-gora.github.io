@@ -1,10 +1,13 @@
 // Lesson-path enhancements: quiz progress from localStorage, and combining several interests.
 import { lessonPath } from './lesson-path.js';
+import { t } from './i18n.js';
+
+const pageLang = document.documentElement.lang || 'en';
 
 for (const el of document.querySelectorAll('[data-progress]')) {
   try {
     const p = JSON.parse(localStorage.getItem(`aigora:quiz:${el.dataset.progress}`) || 'null');
-    if (p) el.textContent = `· your score ${p.right}/${p.total}`;
+    if (p) el.textContent = `· ${t(pageLang, 'yourScore', { right: p.right, total: p.total })}`;
   } catch { /* storage unavailable */ }
 }
 

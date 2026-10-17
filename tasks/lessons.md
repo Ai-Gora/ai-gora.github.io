@@ -17,3 +17,4 @@ One line per mistake hit while building Aigora, so it is not repeated.
 - A URL sanitizer without negative tests (javascript:, data:, //, remote images) silently became a pass-through; every sanitizer fix needs hostile-input tests that assert the final output, plus a mutation check that the guard fails when the sanitizer is removed.
 - Vega-Lite CSV fields stay strings unless `format.parse` types them, and log-scale bars need an explicit `x2` baseline; both render as a blank chart that still passes CI, so open the generated chart.svg in a browser before committing.
 - Don't sanitise SVG with regex (namespaces, entities, CSS escapes, UTF-16 and SMIL all bypass a denylist); publish rasters only and check magic bytes against the extension.
+- `npm i mermaid@^11` pulled a KaTeX advisory (fixed only in 12.x) and a loop variable named `t` shadowed the i18n `t()` helper; run `npm audit --omit=dev` before vendoring a package, and never reuse a helper name as a loop variable.

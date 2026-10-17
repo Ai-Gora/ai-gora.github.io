@@ -110,3 +110,7 @@ details summary { cursor: pointer; color: var(--link); }
 .table-wrap th, .table-wrap td { border: 1px solid #ccc; padding: 0.3rem 0.5rem; text-align: left; vertical-align: top; }
 main img { max-width: 100%; height: auto; }
 pre.mermaid { white-space: pre-wrap; }
+.diagram { margin: 0 0 1.25rem; }
+.diagram-render { overflow-x: auto; }
+.diagram-render svg { max-width: 100%; height: auto; }
+.diagram figcaption { color: var(--muted); font-size: 0.9375rem; margin-top: 0.25rem; }

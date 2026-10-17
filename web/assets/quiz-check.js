@@ -1,3 +1,5 @@
+import { t } from './i18n.js';
+
 export const norm = (s) => String(s).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\s+/g, ' ').trim();
 
 export function isCorrect(q, values) {
@@ -9,9 +11,9 @@ export function isCorrect(q, values) {
   return norm(given) === norm(q.answer);
 }
 
-export function questionState(q, values) {
+export function questionState(q, values, lang = 'en') {
   const ok = isCorrect(q, values);
-  if (ok) return { ok: true, cls: 'ok', open: false, text: '✓ Correct.' };
-  if (!values.length) return { ok: false, cls: 'bad', open: true, text: '✗ Not answered. See the answer below.' };
-  return { ok: false, cls: 'bad', open: true, text: '✗ Not quite. See the answer below.' };
+  if (ok) return { ok: true, cls: 'ok', open: false, text: t(lang, 'correct') };
+  if (!values.length) return { ok: false, cls: 'bad', open: true, text: t(lang, 'notAnswered') };
+  return { ok: false, cls: 'bad', open: true, text: t(lang, 'notQuite') };
 }
