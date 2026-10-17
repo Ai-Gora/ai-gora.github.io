@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { loadContent, buildOutputs, resolveOutDir } from './lib.js';
+import { buildSite } from './site.js';
 
 const args = process.argv.slice(2);
 const opt = (k, d) => { const i = args.indexOf(k); return i >= 0 ? args[i + 1] : d; };
@@ -21,7 +22,8 @@ if (errors.length) {
 console.log(`✓ valid: ${content.articles.length} articles, ${content.quizzes.length} quizzes, ${content.topics.size} topics`);
 if (check) process.exit(0);
 
-const files = buildOutputs(content);
+const data = buildOutputs(content);
+const files = { ...data, ...buildSite(content, data) };
 fs.rmSync(outDir, { recursive: true, force: true });
 for (const [rel, data] of Object.entries(files)) {
   const p = path.join(outDir, rel);
