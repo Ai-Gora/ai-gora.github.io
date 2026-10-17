@@ -1,0 +1,93 @@
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v6.json",
+  "title": "Upravne enote prve ravni v 27 državah EU",
+  "description": "Stolpčni diagram, en stolpec za vsako državo EU, logaritemska lestvica. Število enot je od 3 (Belgija, Portugalska) do 615 (Ciper).",
+  "width": 520,
+  "height": {
+    "step": 16
+  },
+  "data": {
+    "url": "data.csv",
+    "format": {
+      "type": "csv",
+      "parse": {
+        "stevilo": "number"
+      }
+    }
+  },
+  "encoding": {
+    "y": {
+      "field": "drzava",
+      "type": "nominal",
+      "sort": "-x",
+      "title": "Država"
+    },
+    "x": {
+      "field": "stevilo",
+      "type": "quantitative",
+      "scale": {
+        "type": "log",
+        "domain": [
+          1,
+          1000
+        ]
+      },
+      "title": "Število enot (logaritemska lestvica)",
+      "axis": {
+        "values": [
+          1,
+          3,
+          10,
+          30,
+          100,
+          300,
+          1000
+        ],
+        "format": "d"
+      },
+      "stack": null
+    },
+    "tooltip": [
+      {
+        "field": "drzava",
+        "type": "nominal",
+        "title": "Država"
+      },
+      {
+        "field": "enota",
+        "type": "nominal"
+      },
+      {
+        "field": "stevilo",
+        "type": "quantitative",
+        "title": "Število enot (logaritemska lestvica)"
+      }
+    ],
+    "x2": {
+      "datum": 1
+    }
+  },
+  "layer": [
+    {
+      "mark": {
+        "type": "bar",
+        "color": "#3b6ea5"
+      }
+    },
+    {
+      "mark": {
+        "type": "text",
+        "align": "left",
+        "dx": 3,
+        "fontSize": 10
+      },
+      "encoding": {
+        "text": {
+          "field": "stevilo",
+          "type": "quantitative"
+        },
+        "x2": null
+      }
+    }
+  ]
+}

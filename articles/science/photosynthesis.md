@@ -16,8 +16,9 @@ review_after: 2027-04-17
 authors: [grokarmy]
 ai_assisted: true
 sources:
-  - {id: 1, title: "Photosynthesis", url: "https://www.britannica.com/science/photosynthesis", accessed: 2026-10-17}
+  - {id: 1, title: "Photosynthesis", url: "https://en.wikipedia.org/wiki/Photosynthesis", publisher: "Wikipedia (CC BY-SA 4.0)", accessed: 2026-10-17}
   - {id: 2, title: "Photosynthesis (Khan Academy)", url: "https://www.khanacademy.org/science/biology/photosynthesis-in-plants", accessed: 2026-10-17}
+  - {id: 3, title: "Oxygen", url: "https://en.wikipedia.org/wiki/Oxygen", publisher: "Wikipedia (CC BY-SA 4.0)", accessed: 2026-10-17}
 license: CC-BY-SA-4.0
 derived_from: []
 ---
@@ -37,13 +38,14 @@ Chloroplasts contain the green pigment chlorophyll.[^2]
 
 ## Why it matters {#why-it-matters}
 
-Almost all oxygen in the atmosphere comes from photosynthesis.[^1]
+Photosynthesis produces the oxygen in the atmosphere.[^3]
 Printed botany texts spread this knowledge after the [[printing-press|printing press]].
 
 ## Key claims {#key-claims}
 
 - Photosynthesis releases oxygen.[^1]
 - It happens in chloroplasts in plants.[^2]
+- Photosynthesis produces the oxygen in the atmosphere.[^3]
 
 ## Sources {#sources}
 

@@ -163,3 +163,13 @@ details summary { cursor: pointer; color: var(--link); }
   header.site, footer.site, .quick-search, .skip, .caret { display: none; }
   a { color: inherit; }
 }
+/* ---- Tables and diagrams ---- */
+.table-wrap { overflow-x: auto; margin: 1rem 0; }
+.table-wrap table { border-collapse: collapse; font-size: 0.95em; }
+.table-wrap th, .table-wrap td { border: 1px solid var(--border); padding: 0.3rem 0.5rem; text-align: left; vertical-align: top; }
+main img { max-width: 100%; height: auto; }
+pre.mermaid { white-space: pre-wrap; }
+.diagram { margin: 0 0 1.25rem; }
+.diagram-render { overflow-x: auto; }
+.diagram-render svg { max-width: 100%; height: auto; }
+.diagram figcaption { color: var(--text-muted); font-size: 0.9375rem; margin-top: 0.25rem; }

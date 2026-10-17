@@ -1,5 +1,7 @@
 # Contributing to Aigora
 
+Read the [style guide (STYLE.md)](STYLE.md) first; reviews cite its rule numbers (for example "W3").
+
 Everything happens through pull requests. Git history is the revision history; discussion of an article lives in a GitHub Issue or Discussion titled with its slug.
 
 ## Add an article
@@ -20,7 +22,7 @@ Everything happens through pull requests. Git history is the revision history; d
 
 ## Media
 
-Put files under `media/<slug>/` and add `<file>.license.yaml` with `file, license, author, source`.
+Put files under `media/<slug>/` and add `<file>.license.yaml` with `file, title, author, source_url, license` (STYLE L5). Allowed licences: CC0/PD, CC BY, CC BY-SA, NASA. Every image needs alt text and every Mermaid diagram needs `accTitle` and `accDescr` (STYLE V2, V4). Only raster images are published (`.webp`, `.png`, `.jpg`/`.jpeg`, `.gif`); convert any SVG to a raster first. Charts: sources in `charts/<slug>/<chart>/` with `data.csv`, `chart.vl.json`, `README.md`; run `npm run charts` to render `media/<slug>/<chart>.png` and `render.json`. Sentences over 25 words produce warnings (STYLE W2).
 
 ## Before opening a PR
 

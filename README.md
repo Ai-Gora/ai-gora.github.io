@@ -13,7 +13,8 @@ npm ci
 npm run validate # schema, wikilink, citation, quiz-anchor and media-licence checks
 npm test         # validator tests (incl. failing cases)
 npm run lint     # eslint
-npm run build    # writes dist/
+npm run build    # writes dist/ (copies only allowlisted raster media; never SVG)
+npm run charts   # re-render charts/**/chart.vl.json to media/<slug>/<chart>.png + render.json after changing chart data or specs
 ```
 
 ## Repo layout
@@ -22,17 +23,21 @@ npm run build    # writes dist/
 articles/<category>/<slug>.md   one article per file, canonical source
 quizzes/<slug>.yaml             questions tied to article anchors
 topics/<topic>.yaml             categories: description, parent, related
-media/<slug>/...                images, each with a <file>.license.yaml sidecar
+media/<slug>/...                published images only (webp, png, jpg/jpeg, gif; no SVG), each with a <file>.license.yaml sidecar
+charts/<slug>/<chart>/          chart sources, not published: data.csv + chart.vl.json (Vega-Lite) + README.md + render.json (hashes)
 schema/                         JSON Schemas: article frontmatter, quiz, topic, media licence
 scripts/                        build.js (CLI) + lib.js (validation and data) + site.js (HTML)
 web/assets/                     CSS and progressive-enhancement JS copied to dist/assets/
 test/                           node:test suite
 dist/                           generated output (gitignored)
 tasks/lessons.md                mistakes hit, one per line
-LICENSE (code, MIT)  LICENSE-CONTENT (CC BY-SA 4.0)  CONTRIBUTING.md
+LICENSE (code, MIT)  LICENSE-CONTENT (CC BY-SA 4.0)  CONTRIBUTING.md  STYLE.md
 ```
 
 ## Article format
+
+Writing, structure, visuals and image licensing follow the [style guide (STYLE.md)](STYLE.md).
+
 
 Markdown with YAML frontmatter validated by [`schema/article.schema.json`](schema/article.schema.json).
 See [`articles/linguistics/bela-krajina-dialects.md`](articles/linguistics/bela-krajina-dialects.md) for a full example and
@@ -75,6 +80,8 @@ Quiz answers: `single` → option index; `multi` → index list; `true_false` �
 | `search.html` | client-side search over `data/search-index.json` (accent-insensitive prefix match, no minimum term length, metadata: topics, authors, AI-assisted; `?q=&lang=`) | lists every article and section, grouped by language |
 | `quiz/index.html`, `quiz/<slug>.html` | quizzes; JS checks answers against `data/quizzes/<slug>.json` and keeps scores in `localStorage`. Each check sets every question fresh: correct closes its answer, wrong or unanswered opens it | "Show answer" disclosure per question |
 
+UI strings live in `web/assets/i18n.js` (`en`, `sl`; same keys, Slovenian plurals), used at build time and by the quiz/paths scripts, picked by the page's `lang` (article/quiz language, `paths/<lang>/`). Mermaid blocks render client-side with the self-hosted `mermaid` package (copied to `assets/vendor/`, loaded by `assets/diagram.js` only on pages with a diagram; strict security level, dark theme in dark mode); without JS the source and its `accTitle`/`accDescr` caption stay visible.
+
 The path ordering lives in `web/assets/lesson-path.js` and is shared by the build and the browser. HTML pages and assets are not listed in `data/manifest.json`, which stays the data contract.
 
 ## Deploying to GitHub Pages (disabled)
@@ -88,3 +95,18 @@ The path ordering lives in `web/assets/lesson-path.js` and is shared by the buil
 ## License
 
 Code: MIT ([LICENSE](LICENSE)). Content: CC BY-SA 4.0 ([LICENSE-CONTENT](LICENSE-CONTENT)). Media: per-file sidecar.
+
+## Style checks (STYLE.md)
+
+`npm run validate` and CI enforce part of [STYLE.md](STYLE.md) (`scripts/style.js`, `scripts/charts.js`):
+
+| Rule | Check | Result |
+|---|---|---|
+| L1, L2, L5, V7 | every file in `media/` is a regular file (no symlinks, real path inside `media/`) of an allowlisted type (`.webp`, `.png`, `.jpg`, `.jpeg`, `.gif`) whose magic bytes match its extension; SVG and any other type are errors, and the build copy step refuses them too. Every such file (except `.license.yaml` sidecars and `.gitkeep`) has `<file>.license.yaml` with `title`, `author`, `source_url` (or `source`), `license`; licence is CC0/PD, CC BY, CC BY-SA or NASA; NC, ND, Unsplash, Pexels, Pixabay are blocked | error |
+| V2 | every Mermaid block has `accTitle:` and `accDescr` | error |
+| V8 | Mermaid sources are self-contained: no `%%{` directives, `---` config, HTML or numeric character codes, `img:`, `click`/`href`/`call`, `url()`, URLs or `//`, `data:`/`javascript:`, backslashes (checked with whitespace/control characters removed, case-insensitive); `assets/diagram.js` skips such blocks too, and pages with a diagram send a Content-Security-Policy that only allows same-origin resources | error |
+| V4 | every Markdown image has alt text of 125 characters or fewer | error |
+| V3 | each `charts/<slug>/<chart>/chart.vl.json` renders server-side to an intermediate SVG (data `url`s must be regular files inside the chart folder: no symlinks, schemes or absolute paths), has a `README.md`, and `render.json` matches both the SVG render and the committed `media/<slug>/<chart>.png` (`npm run charts` rasterises with resvg and refreshes both; CI only compares hashes) | error |
+| W2 | sentences over 25 words | warning only, never fails CI |
+
+Chart sources live in `charts/`, outside `media/`, and are never published; the chart PNG gets a generated sidecar, and the chart `README.md` carries the data source and long description.

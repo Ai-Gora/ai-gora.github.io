@@ -1,0 +1,46 @@
+# Aigorin seznam izrazov (STYLE W8), slovenščina. Izraz dodajte, ko ga članek prvič potrebuje.
+- term: enota prve ravni
+  meaning: Največja enota z lastno upravo neposredno pod ravnijo države (delovna opredelitev Aigore).
+  use_instead_of: [upravna enota (v tem pomenu), prva upravna raven]
+  lang_pairs: {en: first-level administrative division}
+  source: upravna-delitev-drzav-eu#answer
+- term: upravna enota
+  meaning: V Sloveniji območna enota državne uprave. Ni organ lokalne samouprave.
+  use_instead_of: []
+  lang_pairs: {en: administrative unit (Slovenia)}
+  source: https://www.gov.si/drzavni-organi/upravne-enote/
+- term: občina
+  meaning: V Sloveniji edina raven lokalne samouprave.
+  use_instead_of: [komuna (za Slovenijo)]
+  lang_pairs: {en: municipality}
+  source: https://www.gov.si/teme/lokalna-samouprava/
+- term: lokalna upravna enota (LAU)
+  meaning: Občina ali komuna na Eurostatovem seznamu pod ravnijo NUTS 3.
+  use_instead_of: []
+  lang_pairs: {en: local administrative unit (LAU)}
+  source: https://ec.europa.eu/eurostat/web/nuts/local-administrative-units
+- term: narečje
+  meaning: Pokrajinska oblika jezika, kot jo kaže Karta slovenskih narečij.
+  use_instead_of: []
+  lang_pairs: {en: dialect}
+  source: https://www.fran.si/204/sla-slovenski-lingvisticni-atlas/datoteke/SLA_Karta-narecij.pdf
+- term: govor
+  meaning: Govorica ene vasi ali manjšega območja, pod ravnijo narečja.
+  use_instead_of: []
+  lang_pairs: {en: local dialect}
+  source: https://repozitorij.uni-lj.si/Dokument.php?id=218853&lang=slv
+- term: frontalna (koronalna) ravnina
+  meaning: Navpična ravnina od ene strani do druge. Telo deli na sprednji in zadnji del.
+  use_instead_of: [čelna ravnina]
+  lang_pairs: {en: coronal (frontal) plane}
+  source: https://training.seer.cancer.gov/anatomy/body/terminology.html
+- term: prečna (transverzalna) ravnina
+  meaning: Vodoravna ravnina. Telo deli na zgornji in spodnji del.
+  use_instead_of: [horizontalna ravnina]
+  lang_pairs: {en: transverse (axial) plane}
+  source: https://training.seer.cancer.gov/anatomy/body/terminology.html
+- term: preprosti jezik
+  meaning: Jasen, lahko razumljiv jezik za splošne bralce (raba ZRC SAZU, STYLE W15).
+  use_instead_of: [enostavni jezik]
+  lang_pairs: {en: plain language}
+  source: STYLE.md#writing-w

@@ -14,7 +14,7 @@ questions:
     prompt: Which plane divides the body into front and back parts?
     options: [Sagittal plane, Coronal (frontal) plane, Transverse plane]
     answer: 1
-    explain: The coronal or frontal plane runs from side to side and separates anterior from posterior.
+    explain: The coronal (frontal) plane runs from side to side. It divides the body into front (anterior) and back (posterior) parts.
     ref: human-anatomy-basics#planes
     difficulty: 2
     tags: [planes, terminology]
@@ -23,7 +23,7 @@ questions:
     prompt: How many named bones does the adult skeleton usually have?
     options: ["126", "206", "300"]
     answer: 1
-    explain: The adult skeleton usually has 206 named bones, 80 axial and 126 appendicular.
+    explain: The adult skeleton usually has 206 named bones, 80 in the axial skeleton and 126 in the appendicular skeleton.
     ref: human-anatomy-basics#skeleton
     difficulty: 1
     tags: [skeleton]
