@@ -3,7 +3,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { SITE_NAME, safeJson, jsonLd } from './lib.js';
+import { SITE_NAME, SITE_URL, safeJson, jsonLd } from './lib.js';
 import { lessonPath, pathLanguages } from '../web/assets/lesson-path.js';
 
 const ASSET_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'web', 'assets');
@@ -137,7 +137,8 @@ function articlePage(a, ctx) {
   }
   const translated = langs.length > 1;
   const langNav = translated ? `<nav class="langs" aria-label="Languages"><ul>${langs.map((x) => (x.current ? `<li><span aria-current="true" lang="${esc(x.lang)}">${esc(langName(x.lang))}</span></li>` : `<li><a href="${esc(x.slug)}.html" hreflang="${esc(x.lang)}" lang="${esc(x.lang)}" rel="alternate">${esc(langName(x.lang))}</a></li>`)).join('')}</ul></nav>\n` : '';
-  const altLinks = translated ? langs.map((x) => `<link rel="alternate" hreflang="${esc(x.lang)}" href="${esc(x.slug)}.html">\n`).join('') : '';
+  const canonical = `<link rel="canonical" href="${esc(`${SITE_URL}/a/${fm.slug}.html`)}">\n`;
+  const altLinks = translated ? langs.map((x) => `<link rel="alternate" hreflang="${esc(x.lang)}" href="${esc(`${SITE_URL}/a/${x.slug}.html`)}">\n`).join('') : '';
   const html = `<article class="article">
 <header>
 <p class="kicker">${esc(levelLabel(fm.level))} · ${topicLinks}</p>
@@ -161,7 +162,7 @@ ${quiz ? `<p><a class="button" href="../quiz/${fm.slug}.html">Take the quiz on $
 <p class="muted">ID <code>${esc(fm.id)}</code> · Licence ${esc(fm.license)} · <a href="${fm.slug}.md">Markdown source</a> · <a href="${fm.slug}.json">JSON</a> · <a href="https://github.com/Ai-Gora/ai-gora.github.io/commits/main/${esc(path.relative(ctx.root, a.file).split(path.sep).join('/'))}">History</a></p>
 </footer>
 </article>`;
-  return page({ title: fm.title, base: '../', lang: fm.lang, body: html, description: fm.summary.trim(), head: `${altLinks}<script type="application/ld+json">\n${safeJson(jsonLd(a))}</script>\n` });
+  return page({ title: fm.title, base: '../', lang: fm.lang, body: html, description: fm.summary.trim(), head: `${canonical}${altLinks}<script type="application/ld+json">\n${safeJson(jsonLd(a))}</script>\n` });
 }
 
 function questionHtml(q, slug, ctx) {

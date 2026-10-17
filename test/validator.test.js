@@ -153,6 +153,11 @@ test('translation pointing at existing id with wrong lang fails', () => {
   hasError(errors, /translation sl: 'aig-000002' has lang 'en'/);
 });
 
+test('translation that does not link back fails', () => {
+  const { errors } = fixture((d) => edit(d, 'articles/linguistics/belokranjska-narecja.md', (t) => t.replace('translations: {en: aig-000003}\n', '')));
+  hasError(errors, /bela-krajina-dialects\.md: translation sl: 'aig-000006' does not link back/);
+});
+
 test('mergeOutputs rejects duplicate output paths and merges distinct maps', () => {
   assert.throws(() => mergeOutputs({ 'x.html': 'a' }, { 'x.html': 'b' }), /duplicate output path: x\.html/);
   assert.deepEqual(mergeOutputs({ 'a.html': '1' }, { 'b.html': '2' }), { 'a.html': '1', 'b.html': '2' });

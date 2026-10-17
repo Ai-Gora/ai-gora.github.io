@@ -126,6 +126,7 @@ export function loadContent(root) {
       const t = byId.get(tid);
       if (!t) err(a.file, `translation ${lang}: '${tid}' does not exist`);
       else if (t.fm.lang !== lang) err(a.file, `translation ${lang}: '${tid}' has lang '${t.fm.lang}'`);
+      else if ((t.fm.translations || {})[a.fm.lang] !== a.fm.id) err(a.file, `translation ${lang}: '${tid}' does not link back (add translations: {${a.fm.lang}: ${a.fm.id}} to ${t.fm.slug})`);
     }
 
     // Citations

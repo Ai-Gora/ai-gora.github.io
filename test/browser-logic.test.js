@@ -91,14 +91,14 @@ test('search: accent-insensitive (crnomelj matches Črnomelj)', () => {
 
 test('search: AI matches ai_assisted true and not ai_assisted false', () => {
   const index = prepareIndex([
-    entry('assisted', { title: 'A study', text: 'no acronym here', ai_assisted: true }),
-    entry('manual', { title: 'Another study', text: 'no acronym here', ai_assisted: false }),
+    entry('assisted', { anchor: null, title: 'A study', text: 'no acronym here', ai_assisted: true }),
+    entry('manual', { anchor: null, title: 'Another study', text: 'no acronym here', ai_assisted: false }),
   ]);
   assert.deepEqual(search(index, 'AI').map((e) => e.slug), ['assisted']);
 });
 
 test('search: authors are searchable (grokarmy)', () => {
-  const index = prepareIndex([entry('a', { title: 'Unrelated', authors: ['GrokArmy'] })]);
+  const index = prepareIndex([entry('a', { anchor: null, title: 'Unrelated', authors: ['GrokArmy'] })]);
   assert.deepEqual(search(index, 'grokarmy').map((e) => e.slug), ['a']);
 });
 
@@ -109,10 +109,49 @@ test('search: short 2-character terms match (eu in title)', () => {
 
 test('search: text hit ranks above metadata-only hit', () => {
   const index = prepareIndex([
-    entry('meta', { title: 'Author index', authors: ['EU'] }),
-    entry('text', { title: 'Treaty', text: 'the eu was founded' }),
+    entry('meta', { anchor: null, title: 'Author index', authors: ['EU'] }),
+    entry('text', { anchor: null, title: 'Treaty', text: 'the eu was founded' }),
   ]);
   assert.deepEqual(search(index, 'eu').map((e) => e.slug), ['text', 'meta']);
+});
+
+test('search: metadata attaches only to the anchor-null (#top) entry', () => {
+  const index = prepareIndex([
+    entry('a', { anchor: null, title: 'Intro', authors: ['grokarmy'], ai_assisted: true }),
+    entry('a', { anchor: 'x', title: 'Section X', authors: ['grokarmy'], ai_assisted: true }),
+    entry('a', { anchor: 'y', title: 'Section Y', authors: ['grokarmy'], ai_assisted: true }),
+  ]);
+  assert.deepEqual(search(index, 'AI').map((e) => e.anchor), [null]);
+  assert.deepEqual(search(index, 'grokarmy').map((e) => e.anchor), [null]);
+});
+
+test('search: ai matches every article with a #top metadata entry', () => {
+  const index = prepareIndex([
+    entry('a', { anchor: null, ai_assisted: true }),
+    entry('b', { anchor: null, ai_assisted: true }),
+  ]);
+  assert.equal(search(index, 'ai').length, 2);
+});
+
+test('search: body-text prefix hit beats a metadata hit', () => {
+  const index = prepareIndex([
+    entry('A', { title: 'Alpha', anchor: null, ai_assisted: true }),
+    entry('B', { title: 'Beta', anchor: null, text: 'aims and goals' }),
+  ]);
+  assert.deepEqual(search(index, 'ai').map((e) => e.slug), ['B', 'A']);
+});
+
+test('search: metadata is exact-only (grok does not match grokarmy)', () => {
+  const index = prepareIndex([entry('a', { anchor: null, authors: ['grokarmy'] })]);
+  assert.deepEqual(search(index, 'grok'), []);
+});
+
+test('search: one-letter query exact-matches but never prefix-matches', () => {
+  const index = prepareIndex([
+    entry('prefix', { title: 'EU energy' }),
+    entry('exact', { title: 'e' }),
+  ]);
+  assert.deepEqual(search(index, 'e').map((e) => e.slug), ['exact']);
 });
 
 test('search: title hit ranks above text-only hit', () => {

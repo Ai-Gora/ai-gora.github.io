@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { loadContent, buildOutputs } from '../scripts/lib.js';
+import { loadContent, buildOutputs, SITE_URL } from '../scripts/lib.js';
 import { buildSite, renderInline, esc } from '../scripts/site.js';
 import { lessonPath, expandTopics, pathLanguages } from '../web/assets/lesson-path.js';
 
@@ -37,14 +37,16 @@ test('article page: language switcher links translations', () => {
   assert.ok(en.includes('<nav class="langs" aria-label="Languages">'), 'en page has a language nav');
   assert.ok(en.includes('<span aria-current="true" lang="en">English</span>'), 'current language first');
   assert.ok(en.includes('<a href="belokranjska-narecja.html" hreflang="sl" lang="sl" rel="alternate">Slovenščina</a>'), 'links to the translation');
-  assert.ok(en.includes('<link rel="alternate" hreflang="sl" href="belokranjska-narecja.html">'), 'head advertises the translation');
-  assert.ok(en.includes('<link rel="alternate" hreflang="en" href="bela-krajina-dialects.html">'), 'head advertises itself');
+  assert.ok(en.includes('href="belokranjska-narecja.html" hreflang="sl"'), 'nav switcher stays relative');
+  assert.ok(en.includes(`<link rel="alternate" hreflang="sl" href="${SITE_URL}/a/belokranjska-narecja.html">`), 'head advertises the translation absolutely');
+  assert.ok(en.includes(`<link rel="alternate" hreflang="en" href="${SITE_URL}/a/bela-krajina-dialects.html">`), 'head advertises itself absolutely');
 
   const sl = site['a/belokranjska-narecja.html'];
   assert.ok(sl.includes('<html lang="sl">'), 'sl page declares its language');
   assert.ok(sl.includes('<a href="bela-krajina-dialects.html" hreflang="en" lang="en" rel="alternate">English</a>'), 'links back to the en article');
 
   assert.ok(!site['a/photosynthesis.html'].includes('class="langs"'), 'no language nav without translations');
+  assert.ok(site['a/photosynthesis.html'].includes(`<link rel="canonical" href="${SITE_URL}/a/photosynthesis.html">`), 'article declares its canonical URL');
 });
 
 test('inline renderer escapes HTML and neutralises javascript: links', () => {
