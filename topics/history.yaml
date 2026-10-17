@@ -3,3 +3,7 @@ title: History
 description: Events, people and technologies of the past.
 parent: null
 related: [linguistics]
+i18n:
+  sl:
+    title: Zgodovina
+    description: Dogodki, ljudje in tehnologije preteklosti.

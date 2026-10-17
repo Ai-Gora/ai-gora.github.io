@@ -112,5 +112,5 @@ main img { max-width: 100%; height: auto; }
 pre.mermaid { white-space: pre-wrap; }
 .diagram { margin: 0 0 1.25rem; }
 .diagram-render { overflow-x: auto; }
-.diagram-render svg { max-width: 100%; height: auto; }
+.diagram-render svg { display: block; height: auto; } /* width/max-width from Mermaid; min-width set by diagram.js */
 .diagram figcaption { color: var(--muted); font-size: 0.9375rem; margin-top: 0.25rem; }

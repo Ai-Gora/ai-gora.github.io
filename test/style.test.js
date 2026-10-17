@@ -438,3 +438,26 @@ test('mermaid: plain words and arrows still pass the stricter guard', () => {
     assert.deepEqual(mermaidProblems([...SAFE, `  A["${label}"] --> B`, '  B <--> C', '  C ==> D', '  D -->|yes| E'].join('\n')), [], label);
   }
 });
+
+// Sentry follow-up (PR #12): ordinary labels must not be rejected; quoted img keys must be.
+test('mermaid: ordinary labels with "Data:", "Call", "//", "click" or "HTTP:" pass', () => {
+  for (const label of ['Data: 3 rows', 'Data:', 'DATA:', 'Call centre', 'Call: 112', 'A // B', 'x//y', 'click here', 'href text', 'HTTP: GET', 'javascript: is a language', 'file: report', 'Ratio 3:4']) {
+    const src = [...SAFE, `  A["${label}"] --> B`, `  B[${label}] --> C`].join('\n');
+    assert.deepEqual(mermaidProblems(src), [], label);
+    assert.deepEqual(checkAccessibility(mm(src)), [], label);
+  }
+});
+
+test('mermaid: quoted img keys and click/call/href statements are rejected', () => {
+  const img = 'img: shapes are not allowed';
+  const click = 'click/href statements are not allowed (diagrams are not interactive)';
+  for (const [line, reason] of [
+    ['  A@{ "img": "/a.png" }', img], ["  A@{ 'img' : '/a.png' }", img], ['  A@{ "IMG":"/a.png" }', img],
+    ['  click A "x.html"', click], ['\tclick A call f()', click], ['  A --> B; click A href "#x"', click],
+    ['  subgraph S\n  end; click A "y"', click], ['  call f()', click], ['  href "y"', click],
+  ]) {
+    const src = [...SAFE, '  A --> B', line].join('\n');
+    assert.ok(mermaidProblems(src).includes(reason), `${JSON.stringify(line)} → ${JSON.stringify(mermaidProblems(src))}`);
+    assert.ok(checkAccessibility(mm(src)).includes(`line 1: mermaid diagram 1: ${reason} (STYLE V8)`), JSON.stringify(line));
+  }
+});
