@@ -13,3 +13,4 @@ One line per mistake hit while building Aigora, so it is not repeated.
 - Vega swallows data-loader errors (renders an empty chart), so a custom loader's throw never surfaces; validate every spec `url` before rendering.
 - OpenCode can exit or time out without writing files (glm and deepseek, twice each on the style task); check `git status` right after each run, not the agent's summary.
 - A fixture test that only asserts "no errors" passes vacuously if its `replace()` misses; assert the edit changed the file.
+- Path checks with `path.resolve` + `path.relative` miss symlinks: a committed `data.csv -> /etc/...` passes; use `lstat` to refuse links and compare `realpathSync` results, in both the pre-check and the loader.

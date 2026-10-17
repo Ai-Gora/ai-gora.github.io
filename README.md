@@ -100,10 +100,10 @@ Code: MIT ([LICENSE](LICENSE)). Content: CC BY-SA 4.0 ([LICENSE-CONTENT](LICENSE
 
 | Rule | Check | Result |
 |---|---|---|
-| L1, L2, L5 | every image in `media/` has `<file>.license.yaml` with `title`, `author`, `source_url` (or `source`), `license`; licence is CC0/PD, CC BY, CC BY-SA or NASA; NC, ND, Unsplash, Pexels, Pixabay are blocked | error |
+| L1, L2, L5 | every file in `media/` (except `.license.yaml` sidecars, `.gitkeep` and chart folders) has `<file>.license.yaml` with `title`, `author`, `source_url` (or `source`), `license`; licence is CC0/PD, CC BY, CC BY-SA or NASA; NC, ND, Unsplash, Pexels, Pixabay are blocked | error |
 | V2 | every Mermaid block has `accTitle:` and `accDescr` | error |
 | V4 | every Markdown image has alt text of 125 characters or fewer | error |
-| V3 | each `media/<slug>/<chart>/chart.vl.json` renders server-side to SVG (vega + vega-lite) into `dist/`, has a `README.md`, and the committed `chart.svg` matches | error |
+| V3 | each `media/<slug>/<chart>/chart.vl.json` renders server-side (data `url`s must be regular files inside the chart folder: no symlinks, schemes or absolute paths; SVG hrefs stay relative) to SVG (vega + vega-lite) into `dist/`, has a `README.md`, and the committed `chart.svg` matches | error |
 | W2 | sentences over 25 words | warning only, never fails CI |
 
-Generated `chart.svg` files beside a `chart.vl.json` need no sidecar; their `README.md` carries the data source.
+Files in a chart folder (beside a `chart.vl.json`) need no sidecar; their `README.md` carries the data source.

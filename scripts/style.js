@@ -34,10 +34,13 @@ export function checkMediaDir(root) {
   const errs = [];
   const rel = (p) => path.relative(root, p).split(path.sep).join('/');
   for (const f of walk(path.join(root, 'media'))) {
-    if (!IMAGE_EXT.includes(path.extname(f).toLowerCase())) continue;
-    if (path.basename(f) === 'chart.svg' && fs.existsSync(path.join(path.dirname(f), 'chart.vl.json'))) continue;
+    const name = path.basename(f);
+    if (name.endsWith('.license.yaml') || name === '.gitkeep') continue;
+    // Chart folders (data, spec, generated SVG, README) are credited in their README.md (STYLE V3).
+    if (fs.existsSync(path.join(path.dirname(f), 'chart.vl.json'))) continue;
     const side = `${f}.license.yaml`;
-    if (!fs.existsSync(side)) { errs.push(`${rel(f)}: image has no licence sidecar ${path.basename(side)}`); continue; }
+    const kind = IMAGE_EXT.includes(path.extname(f).toLowerCase()) ? 'image' : 'media file';
+    if (!fs.existsSync(side)) { errs.push(`${rel(f)}: ${kind} has no licence sidecar ${path.basename(side)}`); continue; }
     let s;
     try { s = yaml.load(fs.readFileSync(side, 'utf8'), { schema: yaml.JSON_SCHEMA }); } catch (e) { errs.push(`${rel(side)}: YAML parse error: ${e.reason || e.message}`); continue; }
     for (const e of checkLicense(s)) errs.push(`${rel(side)}: ${e}`);
@@ -51,7 +54,7 @@ function blocks(body) {
   let cur = { fence: null, lines: [] };
   body.split(/\r?\n/).forEach((text, i) => {
     const m = /^\s*(```|~~~)\s*([\w-]*)/.exec(text);
-    if (m && cur.fence === null) { out.push(cur); cur = { fence: m[2] || 'text', lines: [] }; return; }
+    if (m && cur.fence === null) { out.push(cur); cur = { fence: m[2] || 'text', start: i + 1, lines: [] }; return; }
     if (m && cur.fence !== null) { out.push(cur); cur = { fence: null, lines: [] }; return; }
     cur.lines.push({ n: i + 1, text });
   });
@@ -59,18 +62,20 @@ function blocks(body) {
   return out;
 }
 
-export function checkAccessibility(body) {
+/** `offset` = number of file lines before the body (frontmatter), so errors use file line numbers. */
+export function checkAccessibility(body, offset = 0) {
   const errs = [];
   let mermaid = 0;
   for (const b of blocks(body)) {
     if (b.fence === 'mermaid') {
       mermaid++;
-      if (!b.lines.some((l) => /^\s*accTitle\s*:/.test(l.text))) errs.push(`mermaid diagram ${mermaid} has no accTitle (STYLE V2)`);
-      if (!b.lines.some((l) => /^\s*accDescr\s*(:|\{)/.test(l.text))) errs.push(`mermaid diagram ${mermaid} has no accDescr (STYLE V2)`);
+      const at = `line ${b.start + offset}: `;
+      if (!b.lines.some((l) => /^\s*accTitle\s*:/.test(l.text))) errs.push(`${at}mermaid diagram ${mermaid} has no accTitle (STYLE V2)`);
+      if (!b.lines.some((l) => /^\s*accDescr\s*(:|\{)/.test(l.text))) errs.push(`${at}mermaid diagram ${mermaid} has no accDescr (STYLE V2)`);
     } else if (b.fence === null) {
       for (const l of b.lines) for (const m of l.text.matchAll(/!\[([^\]]*)\]\(([^)\s]*)[^)]*\)/g)) {
-        if (!m[1].trim()) errs.push(`line ${l.n}: image ${m[2]} has no alt text (STYLE V4)`);
-        else if (m[1].length > 125) errs.push(`line ${l.n}: image ${m[2]} alt text is ${m[1].length} characters, max 125 (STYLE V4)`);
+        if (!m[1].trim()) errs.push(`line ${l.n + offset}: image ${m[2]} has no alt text (STYLE V4)`);
+        else if (m[1].length > 125) errs.push(`line ${l.n + offset}: image ${m[2]} alt text is ${m[1].length} characters, max 125 (STYLE V4)`);
       }
     }
   }

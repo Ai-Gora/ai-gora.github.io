@@ -180,8 +180,9 @@ export function loadContent(root) {
   // STYLE V2/V4 errors and W2 sentence-length warnings, per article.
   const warnings = [];
   for (const a of articles) {
-    for (const e of checkAccessibility(a.body)) err(a.file, e);
-    for (const w of sentenceWarnings(a.body)) warnings.push(`${path.relative(root, a.file)}: body line ${w.line}: sentence has ${w.words} words (max 25, STYLE W2): "${w.text.length > 80 ? w.text.slice(0, 77) + '...' : w.text}"`);
+    const offset = a.raw.split(/\r?\n/).length - a.body.split(/\r?\n/).length;
+    for (const e of checkAccessibility(a.body, offset)) err(a.file, e);
+    for (const w of sentenceWarnings(a.body)) warnings.push(`${path.relative(root, a.file)}: line ${w.line + offset}: sentence has ${w.words} words (max 25, STYLE W2): "${w.text.length > 80 ? w.text.slice(0, 77) + '...' : w.text}"`);
   }
 
   return { errors, warnings, content: { root, topics, articles, bySlug, byId, quizzes } };
