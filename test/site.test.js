@@ -21,10 +21,10 @@ test('site emits article, quiz, path, search and home pages plus assets', () => 
 test('article page: anchors, wikilinks, citations, sources, backlinks, JSON-LD, lang', () => {
   const html = site['a/bela-krajina-dialects.html'];
   assert.match(html, /<html lang="en">/);
-  assert.match(html, /<h2 id="metlika">Metlika dialect<\/h2>/);
+  assert.match(html, /<h2 id="north">North Bela Krajina dialect<\/h2>/);
   assert.match(html, /<a href="\.\.\/a\/printing-press\.html#effects">effects of printing<\/a>/);
   assert.match(html, /<a href="#source-3" aria-label="Source 3">\[3\]<\/a>/);
-  assert.match(html, /<li id="source-3" value="3"><a href="https:\/\/www\.britannica\.com\/biography\/Primoz-Trubar">/);
+  assert.match(html, /<li id="source-3" value="3"><a href="https:\/\/en\.wikipedia\.org\/wiki\/Slovene_dialects">/);
   assert.match(html, /<script type="application\/ld\+json">/);
   assert.match(html, /Read first[\s\S]*printing-press\.html/);
   assert.match(html, /href="\.\.\/quiz\/bela-krajina-dialects\.html"/);
@@ -58,7 +58,7 @@ test('quiz page works without JS: labelled inputs and a Show answer disclosure',
 test('lesson path: interests include sub-topics and prerequisites come first', () => {
   assert.deepEqual([...expandTopics(topics, ['science'])].sort(), ['biology', 'science']);
   const ling = lessonPath(graph, topics, ['linguistics']);
-  assert.deepEqual(ling.map((s) => [s.slug, s.reason]), [['printing-press', 'prerequisite'], ['bela-krajina-dialects', 'interest']]);
+  assert.deepEqual(ling.map((s) => [s.slug, s.reason]), [['printing-press', 'prerequisite'], ['bela-krajina-dialects', 'interest'], ['belokranjska-narecja', 'interest']]);
   const mixed = lessonPath(graph, topics, ['slovenia', 'biology']).map((s) => s.slug);
   assert.ok(mixed.indexOf('printing-press') < mixed.indexOf('bela-krajina-dialects'));
   assert.deepEqual(lessonPath(graph, topics, ['nothing']), []);

@@ -92,7 +92,7 @@ test('build outputs follow the data contract', () => {
   const out = buildOutputs(content);
   for (const f of ['llms.txt', 'llms-full.txt', 'data/graph.json', 'data/backlinks.json', 'data/search-index.json', 'data/articles.json', 'data/topics.json', 'data/quizzes/index.json', 'data/manifest.json', 'a/photosynthesis.jsonld']) assert.ok(out[f], `missing ${f}`);
   const graph = JSON.parse(out['data/graph.json']);
-  assert.equal(graph.nodes.length, 3);
+  assert.equal(graph.nodes.length, content.articles.length);
   const back = JSON.parse(out['data/backlinks.json']);
   assert.deepEqual(back['printing-press'].map((b) => b.slug).sort(), ['bela-krajina-dialects', 'photosynthesis']);
   const ld = JSON.parse(out['a/photosynthesis.jsonld']);

@@ -1,0 +1,28 @@
+article: aig-000007
+questions:
+  - id: q1
+    type: single
+    prompt: At which NUTS level are regions eligible for EU cohesion policy support defined?
+    options: [NUTS 1, NUTS 2, NUTS 3]
+    answer: 1
+    explain: Eurostat states that cohesion policy eligibility is defined at NUTS 2 level.
+    ref: eu-administrative-divisions#nuts
+    difficulty: 2
+    tags: [nuts, eu]
+  - id: q2
+    type: true_false
+    prompt: Slovenia has established provinces (pokrajine) as a level of self-government.
+    answer: false
+    explain: The constitution provides for provinces, but they have not been established; municipalities are the only level of local self-government.
+    ref: eu-administrative-divisions#slovenia
+    difficulty: 1
+    tags: [slovenia]
+  - id: q3
+    type: single
+    prompt: How many regions does France have?
+    options: ["13", "18", "101"]
+    answer: 1
+    explain: France has 18 regions, 13 in metropolitan France and 5 overseas; 101 is the number of départements.
+    ref: eu-administrative-divisions#examples
+    difficulty: 1
+    tags: [france, examples]
