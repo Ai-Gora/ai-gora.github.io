@@ -1,7 +1,8 @@
-# GitHub Pages deploy. DISABLED: manual trigger only, and the job is gated by `if: false`.
-# To enable, see README "Deploying to GitHub Pages".
+# GitHub Pages deploy: builds dist/ and publishes on every push to main.
 name: Deploy to GitHub Pages
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
 permissions:
   contents: read
@@ -12,7 +13,6 @@ concurrency:
   cancel-in-progress: false
 jobs:
   deploy:
-    if: false
     runs-on: ubuntu-latest
     environment:
       name: github-pages
