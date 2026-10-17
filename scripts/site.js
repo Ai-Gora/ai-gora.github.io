@@ -104,6 +104,14 @@ ${scripts.map((s) => `<script type="module" src="${base}assets/${s}"></script>`)
 `;
 }
 
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+/** '2026-10-17' -> '17 Oct 2026'. String parsing only, so no timezone shifts. */
+export const fmtDate = (iso) => {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso));
+  return m && MONTHS[m[2] - 1] ? `${Number(m[3])} ${MONTHS[m[2] - 1]} ${m[1]}` : String(iso);
+};
+const timeTag = (iso) => `<time datetime="${esc(iso)}">${esc(fmtDate(iso))}</time>`;
+
 const levelLabel = (l) => ({ intro: 'Intro', core: 'Core', deep: 'Deep' }[l] || l);
 const answerText = (q) => {
   if (q.type === 'single') return q.options[q.answer];
@@ -129,6 +137,7 @@ function articlePage(a, ctx) {
   const quiz = ctx.quizSlugs.has(fm.slug);
   const draft = fm.status === 'draft' ? '<p class="notice" role="note"><strong>Draft:</strong> this article has not been reviewed yet.</p>' : '';
   const stale = fm.status === 'stale' ? '<p class="notice" role="note"><strong>Stale:</strong> this article is due for review and may be out of date.</p>' : '';
+  const due = fm.status !== 'stale' && ctx.today > fm.review_after ? `<p class="notice due" role="note"><strong>Review due:</strong> this article was due for review on ${timeTag(fm.review_after)}.</p>` : '';
   const langs = [{ lang: fm.lang, slug: fm.slug, current: true }];
   for (const [l, id] of Object.entries(fm.translations || {})) {
     if (l === fm.lang) continue;
@@ -144,12 +153,12 @@ function articlePage(a, ctx) {
 <p class="kicker">${esc(levelLabel(fm.level))} · ${topicLinks}</p>
 <h1>${esc(fm.title)}</h1>
 ${langNav}<p class="summary"><strong>In short:</strong> ${esc(fm.summary.trim())}</p>
-${draft}${stale}<dl class="meta">
-<div><dt>Status</dt><dd>${esc(fm.status)}</dd></div>
+${draft}${stale}${due}<dl class="meta living" aria-label="Article status">
+<div><dt>Checked</dt><dd>${timeTag(fm.updated)}</dd></div>
+<div><dt>Next review</dt><dd>${timeTag(fm.review_after)}</dd></div>
 <div><dt>Confidence</dt><dd>${esc(fm.confidence)}</dd></div>
-<div><dt>Updated</dt><dd><time datetime="${esc(fm.updated)}">${esc(fm.updated)}</time></dd></div>
-<div><dt>Review after</dt><dd><time datetime="${esc(fm.review_after)}">${esc(fm.review_after)}</time></dd></div>
-<div><dt>Authors</dt><dd>${fm.authors.map(esc).join(', ')}${fm.ai_assisted ? ' (AI-assisted)' : ''}</dd></div>
+<div><dt>Status</dt><dd>${esc(fm.status)}</dd></div>
+<div><dt>Authors</dt><dd>${fm.authors.map(esc).join(', ')}${fm.ai_assisted ? ' · AI-assisted' : ''}</dd></div>
 </dl>
 </header>
 ${prereq ? `<aside class="box" aria-labelledby="prereq-h"><h2 id="prereq-h" class="box-h">Read first</h2><ul>${prereq}</ul></aside>` : ''}
@@ -200,10 +209,10 @@ ${q.questions.map((qu) => questionHtml(qu, q.slug, ctx)).join('\n')}
 
 function pathList(steps, ctx, base) {
   if (!steps.length) return '<p>No articles for this interest yet.</p>';
-  return `<ol class="path">${steps.map((s) => {
+  return `<p class="path-progress" data-path-progress hidden></p>\n<ol class="path">${steps.map((s) => {
     const a = ctx.bySlug.get(s.slug);
     const secs = a.sections.filter((x) => x.level === 2 && x.anchor && !['key-claims', 'sources'].includes(x.anchor));
-    return `<li class="step">
+    return `<li class="step" data-slug="${esc(s.slug)}">
 <h3 lang="${esc(s.lang)}"><a href="${base}a/${s.slug}.html">${esc(s.title)}</a></h3>
 <p class="muted">${esc(levelLabel(s.level))} · ${esc(langName(s.lang))}${s.reason === 'prerequisite' ? ' · prerequisite' : ''}</p>
 <p>${esc(a.fm.summary.trim())}</p>
@@ -214,7 +223,7 @@ ${s.quizzes.length ? `<p><a href="${base}quiz/${s.slug}.html">Quiz (${s.quizzes.
 }
 
 /** Pure: content + graph/topics data -> { relativePath: string } of HTML pages and assets. */
-export function buildSite(content, data) {
+export function buildSite(content, data, opts = {}) {
   const graph = JSON.parse(data['data/graph.json']);
   const topicsData = JSON.parse(data['data/topics.json']);
   const backlinks = JSON.parse(data['data/backlinks.json']);
@@ -222,6 +231,7 @@ export function buildSite(content, data) {
   const sorted = [...content.articles].sort((x, y) => x.fm.slug.localeCompare(y.fm.slug));
   const ctx = {
     root: content.root,
+    today: opts.today || new Date().toISOString().slice(0, 10),
     bySlug: content.bySlug,
     byId: content.byId,
     backlinks,
@@ -249,7 +259,7 @@ export function buildSite(content, data) {
   out['search.html'] = page({ title: 'Search', base: '', current: 'search.html', scripts: ['search.js'], body: `<h1>Search</h1>
 <form id="search" role="search" aria-label="Article search" action="search.html" method="get">
 <label for="q">Search articles and sections</label>
-<div class="row"><input id="q" name="q" type="search" autocomplete="off" aria-describedby="search-help"><button type="submit">Search</button></div>
+<div class="row"><span class="field"><input id="q" name="q" type="search" autocomplete="off" placeholder=" " aria-describedby="search-help"><span class="caret" aria-hidden="true"></span></span><button type="submit">Search</button></div>
 <p><label for="search-lang">Language</label> <select id="search-lang" name="lang"><option value="">All languages</option>${langs.map((c) => `<option value="${esc(c)}">${esc(langName(c))}</option>`).join('')}</select></p>
 <p id="search-help" class="muted">Matches titles, section headings and text.</p>
 </form>

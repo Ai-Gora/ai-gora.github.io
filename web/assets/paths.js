@@ -1,11 +1,35 @@
 // Lesson-path enhancements: quiz progress from localStorage, and combining several interests.
 import { lessonPath } from './lesson-path.js';
+import { pathProgress } from './path-progress.js';
+
+const score = (slug) => { try { return JSON.parse(localStorage.getItem(`aigora:quiz:${slug}`) || 'null'); } catch { return null; } };
 
 for (const el of document.querySelectorAll('[data-progress]')) {
   try {
     const p = JSON.parse(localStorage.getItem(`aigora:quiz:${el.dataset.progress}`) || 'null');
     if (p) el.textContent = `· your score ${p.right}/${p.total}`;
   } catch { /* storage unavailable */ }
+}
+
+// Growing stem: fill the path line up to the last finished step, mark steps done, offer "Continue".
+for (const ol of document.querySelectorAll('ol.path')) {
+  const out = ol.previousElementSibling;
+  if (!out || !out.matches('[data-path-progress]')) continue;
+  const steps = [...ol.querySelectorAll(':scope > li.step')];
+  const slugs = steps.map((li) => li.dataset.slug);
+  const p = pathProgress(slugs, Object.fromEntries(slugs.map((s) => [s, score(s)])));
+  steps.forEach((li, i) => {
+    if (!p.done[i] || li.classList.contains('done')) return;
+    li.classList.add('done');
+    const h = li.querySelector('h3');
+    if (h) h.append(Object.assign(document.createElement('span'), { className: 'visually-hidden', textContent: ' (done)' }));
+  });
+  requestAnimationFrame(() => ol.style.setProperty('--grown', String(p.grown)));
+  if (!p.count) continue;
+  out.textContent = `${p.count} of ${p.total} steps done`;
+  const link = p.next === -1 ? null : steps[p.next].querySelector('h3 a');
+  if (link) out.append(' ', Object.assign(document.createElement('a'), { className: 'button action', href: link.getAttribute('href'), textContent: `Continue: ${link.textContent}` }));
+  out.hidden = false;
 }
 
 const form = document.getElementById('path-builder');

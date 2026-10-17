@@ -11,3 +11,4 @@ One line per mistake hit while building Aigora, so it is not repeated.
 - Applying bold/italics per text segment between tags (my #2 review fix) left literal `*` when emphasis wraps a link; swap tags for placeholders, apply emphasis across the whole string, then restore them.
 - A score comment claimed metadata (weight 0.5) "ranks below any content hit", but exact matches score weight × 2, so 0.5 × 2 tied a text prefix hit (1); check the arithmetic against the max of each field, and put metadata on one entry per article, not every section.
 - A fixture test that only asserts "no errors" passes vacuously if its `replace()` misses; assert the edit changed the file.
+- Running four OpenCode free-model jobs in parallel hit the provider's rate limit on both deepseek-v4.1-flash-free and the glm-5.3-flash-free fallback; runs hang silently (check ~/.local/share/opencode/log/opencode.log for 'Rate limit exceeded') — run one OpenCode job at a time.

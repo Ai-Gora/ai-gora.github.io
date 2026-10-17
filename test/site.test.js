@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { loadContent, buildOutputs, SITE_URL } from '../scripts/lib.js';
-import { buildSite, renderInline, esc } from '../scripts/site.js';
+import { buildSite, renderInline, esc, fmtDate } from '../scripts/site.js';
 import { lessonPath, expandTopics, pathLanguages } from '../web/assets/lesson-path.js';
 
 const REPO = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -175,4 +175,29 @@ test('buildSite throws instead of overwriting a page (topic id "index" bypassing
   const rename = (json) => JSON.stringify(JSON.parse(json), (k, v) => (v === 'linguistics' ? 'index' : v));
   const forged = { ...data, 'data/topics.json': rename(data['data/topics.json']), 'data/graph.json': rename(data['data/graph.json']) };
   assert.throws(() => buildSite(content, forged), /duplicate output path: paths\/index\.html/);
+});
+
+test('fmtDate formats ISO dates without timezone shifts', () => {
+  assert.equal(fmtDate('2026-10-17'), '17 Oct 2026');
+  assert.equal(fmtDate('2027-01-05'), '5 Jan 2027');
+  assert.equal(fmtDate('2026-13-01'), '2026-13-01');
+  assert.equal(fmtDate('soon'), 'soon');
+});
+
+test('article page: living-document strip and Review due notice', () => {
+  const a = content.bySlug.get('bela-krajina-dialects').fm;
+  const html = site['a/bela-krajina-dialects.html'];
+  assert.ok(html.includes('<dl class="meta living" aria-label="Article status">'));
+  assert.ok(html.includes(`<dt>Checked</dt><dd><time datetime="${a.updated}">${fmtDate(a.updated)}</time>`));
+  assert.ok(html.includes(`<dt>Next review</dt><dd><time datetime="${a.review_after}">`));
+  assert.equal(html.includes('· AI-assisted'), a.ai_assisted === true);
+  assert.ok(buildSite(content, data, { today: '2099-01-01' })['a/bela-krajina-dialects.html'].includes('class="notice due"'));
+  assert.ok(!buildSite(content, data, { today: '2000-01-01' })['a/bela-krajina-dialects.html'].includes('class="notice due"'));
+});
+
+test('lesson path and search carry the enhancement hooks', () => {
+  assert.ok(site['paths/linguistics.html'].includes('<p class="path-progress" data-path-progress hidden></p>\n<ol class="path">'));
+  assert.ok(site['paths/linguistics.html'].includes('class="step" data-slug="'));
+  assert.ok(site['search.html'].includes('placeholder=" "'));
+  assert.ok(site['search.html'].includes('<span class="caret" aria-hidden="true"></span>'));
 });

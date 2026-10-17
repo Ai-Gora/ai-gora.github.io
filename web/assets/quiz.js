@@ -22,6 +22,9 @@ if (form) {
       if (st.ok) right++;
       const fb = fs.querySelector('[data-feedback]');
       fb.hidden = false;
+      fs.dataset.state = st.cls;
+      fb.className = 'feedback';
+      void fb.offsetWidth; // restart the CSS "settle" animation on every check
       fb.className = `feedback ${st.cls}`;
       fb.textContent = st.text;
       fs.querySelector('details').open = st.open;
@@ -33,6 +36,7 @@ if (form) {
   form.addEventListener('reset', () => {
     for (const fb of form.querySelectorAll('[data-feedback]')) fb.hidden = true;
     for (const d of form.querySelectorAll('details')) d.open = false;
+    for (const fs of form.querySelectorAll('[data-qid]')) delete fs.dataset.state;
     status.textContent = '';
   });
 }
