@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Ai-Gora/aigora/schema/topic.schema.json",
+  "title": "Aigora topic file",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "title", "description"],
+  "properties": {
+    "id": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$" },
+    "title": { "type": "string", "minLength": 1 },
+    "description": { "type": "string", "minLength": 1 },
+    "parent": { "type": ["string", "null"] },
+    "related": { "type": "array", "items": { "type": "string" } }
+  }
+}
