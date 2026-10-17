@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import yaml from 'js-yaml';
 import Ajv from 'ajv/dist/2020.js';
 import addFormats from 'ajv-formats';
+import { checkMediaDir, checkAccessibility, sentenceWarnings } from './style.js';
 
 const SCHEMA_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'schema');
 export const SITE_NAME = 'Aigora';
@@ -21,7 +22,6 @@ function makeValidators() {
     article: ajv.compile(read('article.schema.json')),
     quiz: ajv.compile(read('quiz.schema.json')),
     topic: ajv.compile(read('topic.schema.json')),
-    media: ajv.compile(read('media-license.schema.json')),
   };
 }
 
@@ -175,14 +175,17 @@ export function loadContent(root) {
     quizzes.push({ ...q, slug: a.fm.slug, file: f });
   }
 
-  for (const f of walk(path.join(root, 'media'), '')) {
-    if (f.endsWith('.license.yaml') || path.basename(f) === '.gitkeep') continue;
-    const side = `${f}.license.yaml`;
-    if (!fs.existsSync(side)) { err(f, `media file has no licence sidecar ${path.basename(side)}`); continue; }
-    try { const m = loadYaml(fs.readFileSync(side, 'utf8')); if (!v.media(m)) fmtAjv(v.media.errors).forEach((x) => err(side, `media licence schema: ${x}`)); } catch (e) { err(side, `YAML parse error: ${e.message}`); }
+  // STYLE L1/L2/L5: image sidecars with TASL fields and an allowed licence.
+  for (const e of checkMediaDir(root)) errors.push(e);
+  // STYLE V2/V4 errors and W2 sentence-length warnings, per article.
+  const warnings = [];
+  for (const a of articles) {
+    const offset = a.raw.split(/\r?\n/).length - a.body.split(/\r?\n/).length;
+    for (const e of checkAccessibility(a.body, offset)) err(a.file, e);
+    for (const w of sentenceWarnings(a.body)) warnings.push(`${path.relative(root, a.file)}: line ${w.line + offset}: sentence has ${w.words} words (max 25, STYLE W2): "${w.text.length > 80 ? w.text.slice(0, 77) + '...' : w.text}"`);
   }
 
-  return { errors, content: { root, topics, articles, bySlug, byId, quizzes } };
+  return { errors, warnings, content: { root, topics, articles, bySlug, byId, quizzes } };
 }
 
 // JSON safe to embed in <script type="application/ld+json">.

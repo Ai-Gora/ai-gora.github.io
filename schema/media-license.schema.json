@@ -1,12 +1,19 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "Aigora media licence sidecar",
+  "title": "Aigora media licence sidecar (STYLE.md L5); enforced by scripts/style.js checkLicense",
   "type": "object",
-  "required": ["file", "license", "author", "source"],
+  "required": ["file", "title", "author", "license"],
+  "anyOf": [{ "required": ["source_url"] }, { "required": ["source"] }],
   "properties": {
     "file": { "type": "string" },
-    "license": { "type": "string" },
+    "title": { "type": "string" },
     "author": { "type": "string" },
-    "source": { "type": "string" }
+    "source_url": { "type": "string", "format": "uri" },
+    "source": { "type": "string" },
+    "license": { "type": "string", "description": "SPDX-like id. Allowed: CC0-1.0, PD/PDM, CC-BY[-n.n], CC-BY-SA[-n.n], NASA. Blocked: NC, ND, Unsplash, Pexels, Pixabay." },
+    "license_url": { "type": "string" },
+    "modified": { "type": "string" },
+    "retrieved": { "type": "string" },
+    "ai_generated": { "type": "boolean" }
   }
 }
