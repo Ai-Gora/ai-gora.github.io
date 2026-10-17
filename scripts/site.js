@@ -9,6 +9,8 @@ import { lessonPath } from '../web/assets/lesson-path.js';
 const ASSET_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'web', 'assets');
 
 export const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+export const LANG_NAMES = { en: 'English', sl: 'Slovenščina' };
+const langName = (l) => LANG_NAMES[l] || l;
 const safeUrl = (u) => (/^(https?:\/\/|mailto:|#|\.{0,2}\/|[a-z0-9-]+\.html)/i.test(u) && !/^\s*javascript:/i.test(u) ? u : '#');
 const NUL = String.fromCharCode(0);
 
@@ -126,11 +128,20 @@ function articlePage(a, ctx) {
   const quiz = ctx.quizSlugs.has(fm.slug);
   const draft = fm.status === 'draft' ? '<p class="notice" role="note"><strong>Draft:</strong> this article has not been reviewed yet.</p>' : '';
   const stale = fm.status === 'stale' ? '<p class="notice" role="note"><strong>Stale:</strong> this article is due for review and may be out of date.</p>' : '';
+  const langs = [{ lang: fm.lang, slug: fm.slug, current: true }];
+  for (const [l, id] of Object.entries(fm.translations || {})) {
+    if (l === fm.lang) continue;
+    const t = ctx.byId.get(id);
+    if (t) langs.push({ lang: l, slug: t.fm.slug, current: false });
+  }
+  const translated = langs.length > 1;
+  const langNav = translated ? `<nav class="langs" aria-label="Languages"><ul>${langs.map((x) => (x.current ? `<li><span aria-current="true" lang="${esc(x.lang)}">${esc(langName(x.lang))}</span></li>` : `<li><a href="${esc(x.slug)}.html" hreflang="${esc(x.lang)}" lang="${esc(x.lang)}" rel="alternate">${esc(langName(x.lang))}</a></li>`)).join('')}</ul></nav>\n` : '';
+  const altLinks = translated ? langs.map((x) => `<link rel="alternate" hreflang="${esc(x.lang)}" href="${esc(x.slug)}.html">\n`).join('') : '';
   const html = `<article class="article">
 <header>
 <p class="kicker">${esc(levelLabel(fm.level))} · ${topicLinks}</p>
 <h1>${esc(fm.title)}</h1>
-<p class="summary"><strong>In short:</strong> ${esc(fm.summary.trim())}</p>
+${langNav}<p class="summary"><strong>In short:</strong> ${esc(fm.summary.trim())}</p>
 ${draft}${stale}<dl class="meta">
 <div><dt>Status</dt><dd>${esc(fm.status)}</dd></div>
 <div><dt>Confidence</dt><dd>${esc(fm.confidence)}</dd></div>
@@ -149,7 +160,7 @@ ${quiz ? `<p><a class="button" href="../quiz/${fm.slug}.html">Take the quiz on $
 <p class="muted">ID <code>${esc(fm.id)}</code> · Licence ${esc(fm.license)} · <a href="${fm.slug}.md">Markdown source</a> · <a href="${fm.slug}.json">JSON</a> · <a href="https://github.com/Ai-Gora/ai-gora.github.io/commits/main/${esc(path.relative(ctx.root, a.file).split(path.sep).join('/'))}">History</a></p>
 </footer>
 </article>`;
-  return page({ title: fm.title, base: '../', lang: fm.lang, body: html, description: fm.summary.trim(), head: `<script type="application/ld+json">\n${safeJson(jsonLd(a))}</script>\n` });
+  return page({ title: fm.title, base: '../', lang: fm.lang, body: html, description: fm.summary.trim(), head: `${altLinks}<script type="application/ld+json">\n${safeJson(jsonLd(a))}</script>\n` });
 }
 
 function questionHtml(q, slug, ctx) {
@@ -209,6 +220,7 @@ export function buildSite(content, data) {
   const ctx = {
     root: content.root,
     bySlug: content.bySlug,
+    byId: content.byId,
     backlinks,
     quizSlugs: new Set(content.quizzes.map((q) => q.slug)),
     titleOf: (s) => content.bySlug.get(s)?.fm.title || s,

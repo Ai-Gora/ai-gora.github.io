@@ -32,6 +32,21 @@ test('article page: anchors, wikilinks, citations, sources, backlinks, JSON-LD, 
   assert.ok(!/<script(?! type="(module|application\/ld\+json)")/.test(html), 'only module and JSON-LD scripts');
 });
 
+test('article page: language switcher links translations', () => {
+  const en = site['a/bela-krajina-dialects.html'];
+  assert.ok(en.includes('<nav class="langs" aria-label="Languages">'), 'en page has a language nav');
+  assert.ok(en.includes('<span aria-current="true" lang="en">English</span>'), 'current language first');
+  assert.ok(en.includes('<a href="belokranjska-narecja.html" hreflang="sl" lang="sl" rel="alternate">Slovenščina</a>'), 'links to the translation');
+  assert.ok(en.includes('<link rel="alternate" hreflang="sl" href="belokranjska-narecja.html">'), 'head advertises the translation');
+  assert.ok(en.includes('<link rel="alternate" hreflang="en" href="bela-krajina-dialects.html">'), 'head advertises itself');
+
+  const sl = site['a/belokranjska-narecja.html'];
+  assert.ok(sl.includes('<html lang="sl">'), 'sl page declares its language');
+  assert.ok(sl.includes('<a href="bela-krajina-dialects.html" hreflang="en" lang="en" rel="alternate">English</a>'), 'links back to the en article');
+
+  assert.ok(!site['a/photosynthesis.html'].includes('class="langs"'), 'no language nav without translations');
+});
+
 test('inline renderer escapes HTML and neutralises javascript: links', () => {
   const ctx = { base: '../', titleOf: (s) => s };
   assert.equal(renderInline('<b>x</b>', ctx), '&lt;b&gt;x&lt;/b&gt;');

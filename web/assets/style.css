@@ -46,6 +46,8 @@ blockquote { margin: 0 0 1rem; padding-left: 1rem; border-left: 4px solid var(--
 .muted { color: var(--muted); }
 .kicker { color: var(--muted); margin: 1.5rem 0 0; font-size: 0.9375rem; }
 .kicker + h1 { margin-top: 0.25rem; }
+.langs ul { list-style: none; display: flex; gap: 0.75rem; padding: 0; margin: 0 0 1rem; }
+.langs [aria-current] { font-weight: 700; }
 .summary { font-size: 1.125rem; }
 .notice { background: var(--notice); padding: 0.5rem 0.75rem; border-radius: 4px; }
 .meta { display: flex; flex-wrap: wrap; gap: 0.25rem 1.25rem; font-size: 0.9375rem; color: var(--muted); }
