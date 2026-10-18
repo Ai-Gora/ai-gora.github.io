@@ -1,0 +1,45 @@
+article: aig-000011
+questions:
+  - id: q1
+    type: single
+    prompt: Which Stoic developed a propositional logic with a deductive system?
+    options: ["Zeno", "Chrysippus", "Seneca", "Epictetus"]
+    answer: 1
+    explain: Many in antiquity regarded Chrysippus as the greatest logician.
+    ref: hellenistic-roman-philosophy#stoicism
+    difficulty: 1
+    tags: [stoicism, logic]
+  - id: q2
+    type: true_false
+    prompt: Pyrrhonian skeptics aimed at tranquillity by suspending judgement.
+    answer: true
+    explain: An equal and opposing argument for every argument leads to suspension of judgement, and then to tranquillity.
+    ref: hellenistic-roman-philosophy#skepticism
+    difficulty: 1
+    tags: [skepticism]
+  - id: q3
+    type: single
+    prompt: What did Epicurus see as the goal of life?
+    options: ["Fame and wealth", "Happiness as the absence of physical pain and mental disturbance", "Political power", "Union with the One"]
+    answer: 1
+    explain: For Epicurus, happiness comes from the absence of physical pain and mental disturbance.
+    ref: hellenistic-roman-philosophy#epicureanism
+    difficulty: 1
+    tags: [epicureanism, ethics]
+  - id: q4
+    type: single
+    prompt: Which work is the fullest surviving account of Pyrrhonian skepticism?
+    options: ["Meditations", "Outlines of Pyrrhonism", "De rerum natura", "Enneads"]
+    answer: 1
+    explain: Sextus Empiricus wrote the Outlines of Pyrrhonism.
+    ref: hellenistic-roman-philosophy#skepticism
+    difficulty: 2
+    tags: [skepticism, sources]
+  - id: q5
+    type: true_false
+    prompt: Neoplatonic teaching ended everywhere in 529 CE.
+    answer: false
+    explain: The Athenian school disbanded after 529, but teaching continued in Alexandria and Constantinople until the end of the 6th century.
+    ref: hellenistic-roman-philosophy#neoplatonism
+    difficulty: 2
+    tags: [neoplatonism]

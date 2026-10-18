@@ -1,0 +1,45 @@
+article: aig-000012
+questions:
+  - id: q1
+    type: single
+    prompt: Kateri stoik je razvil izjavno logiko z deduktivnim sistemom?
+    options: ["Zenon", "Hrizip", "Seneka", "Epiktet"]
+    answer: 1
+    explain: Mnogi so Hrizipa v antiki imeli za največjega logika.
+    ref: helenisticna-in-rimska-filozofija#stoicism
+    difficulty: 1
+    tags: [stoicizem, logika]
+  - id: q2
+    type: true_false
+    prompt: Pironski skeptiki so z zadržanjem sodbe težili k duševnemu miru.
+    answer: true
+    explain: Enakovreden nasprotni argument za vsak argument vodi do zadržanja sodbe in nato do duševnega miru.
+    ref: helenisticna-in-rimska-filozofija#skepticism
+    difficulty: 1
+    tags: [skepticizem]
+  - id: q3
+    type: single
+    prompt: Kaj je bil po Epikurju cilj življenja?
+    options: ["Slava in bogastvo", "Sreča kot odsotnost telesne bolečine in duševne vznemirjenosti", "Politična moč", "Zedinjenje z Enim"]
+    answer: 1
+    explain: Za Epikurja sreča izhaja iz odsotnosti telesne bolečine in duševne vznemirjenosti.
+    ref: helenisticna-in-rimska-filozofija#epicureanism
+    difficulty: 1
+    tags: [epikurejstvo, etika]
+  - id: q4
+    type: single
+    prompt: Katero delo je najpopolnejši ohranjeni opis pironskega skepticizma?
+    options: ["Premišljevanja", "Očrti pironizma", "O naravi stvari", "Eneade"]
+    answer: 1
+    explain: Očrte pironizma je napisal Sekst Empirik.
+    ref: helenisticna-in-rimska-filozofija#skepticism
+    difficulty: 2
+    tags: [skepticizem, viri]
+  - id: q5
+    type: true_false
+    prompt: Novoplatonsko poučevanje se je leta 529 končalo povsod.
+    answer: false
+    explain: Atenska šola se je po letu 529 razšla, v Aleksandriji in Konstantinoplu pa se je poučevanje nadaljevalo do konca 6. stoletja.
+    ref: helenisticna-in-rimska-filozofija#neoplatonism
+    difficulty: 2
+    tags: [novoplatonizem]
