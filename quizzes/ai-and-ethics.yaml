@@ -1,0 +1,45 @@
+article: aig-000025
+questions:
+  - id: q1
+    type: single
+    prompt: Which three Greek concepts does modern virtue ethics keep, according to SEP?
+    options: ["Logos, ethos and pathos", "Arete, phronesis and eudaimonia", "Ataraxia, apatheia and aponia", "Techne, episteme and nous"]
+    answer: 1
+    explain: Virtue, practical wisdom and flourishing.
+    ref: ai-and-ethics#traditions
+    difficulty: 1
+    tags: [virtue-ethics]
+  - id: q2
+    type: true_false
+    prompt: SEP reports that two common fairness measures in the COMPAS debate can always be satisfied together.
+    answer: false
+    explain: Except in highly unusual circumstances, both cannot be satisfied at once.
+    ref: ai-and-ethics#fairness
+    difficulty: 2
+    tags: [fairness, compas]
+  - id: q3
+    type: single
+    prompt: What does the "responsibility gap" for autonomous weapons (Sparrow 2007) mean?
+    options: ["Weapons are always the responsibility of the manufacturer", "Neither the human nor the machine may be responsible", "Only the commander is responsible", "International law forbids all such weapons"]
+    answer: 1
+    explain: SEP summarises Sparrow's point this way.
+    ref: ai-and-ethics#responsibility
+    difficulty: 1
+    tags: [responsibility, weapons]
+  - id: q4
+    type: single
+    prompt: When was Regulation (EU) 2024/1689, the AI Act, published in the Official Journal?
+    options: ["13 June 2024", "12 July 2024", "1 August 2024", "2 August 2026"]
+    answer: 1
+    explain: It is dated 13 June 2024 (signature), was published on 12 July 2024 and entered into force on 1 August 2024.
+    ref: ai-and-ethics#eu-ai-act
+    difficulty: 2
+    tags: [eu-ai-act, law]
+  - id: q5
+    type: true_false
+    prompt: Under the AI Act as amended by Regulation (EU) 2026/1744, Annex III high-risk duties apply from 2 December 2027.
+    answer: true
+    explain: Annex I product-embedded systems follow on 2 August 2028.
+    ref: ai-and-ethics#eu-ai-act
+    difficulty: 2
+    tags: [eu-ai-act, digital-omnibus]
