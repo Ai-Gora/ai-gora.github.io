@@ -49,3 +49,33 @@
   use_instead_of: [cross-section plane]
   lang_pairs: {sl: prečna (transverzalna) ravnina}
   source: https://training.seer.cancer.gov/anatomy/body/terminology.html
+- term: Presocratics
+  meaning: Greek thinkers of the 6th and 5th centuries BCE, seen in antiquity as the first Western philosophers and scientists.
+  use_instead_of: [pre-Socratic philosophers (as a variant spelling)]
+  lang_pairs: {sl: predsokratiki}
+  source: ancient-greek-philosophy#presocratics
+- term: archê
+  meaning: The originating principle from which things come, in early Greek natural philosophy.
+  use_instead_of: [first substance, arche (unaccented, in Aigora text)]
+  lang_pairs: {sl: arhé (počelo)}
+  source: https://iep.utm.edu/thales/
+- term: aretê
+  meaning: Virtue or excellence, the quality the Sophists claimed to teach.
+  use_instead_of: [arete (unaccented, in Aigora text)]
+  lang_pairs: {sl: areté (vrlina)}
+  source: https://iep.utm.edu/sophists/
+- term: true belief
+  meaning: A belief that is true, whether or not it is well grounded. In Plato, true judgement (doxa).
+  use_instead_of: [right opinion, correct opinion]
+  lang_pairs: {sl: resnično mnenje}
+  source: ancient-greek-philosophy#plato
+- term: practical wisdom
+  meaning: Aristotle's phronêsis, the ability to see what is best to do in a particular case.
+  use_instead_of: [prudence]
+  lang_pairs: {sl: praktična modrost}
+  source: https://plato.stanford.edu/entries/aristotle-ethics/
+- term: virtue ethics
+  meaning: The approach in normative ethics that emphasizes the virtues, or moral character.
+  use_instead_of: [ethics of virtue, aretaic ethics]
+  lang_pairs: {sl: etika vrlin}
+  source: https://plato.stanford.edu/entries/ethics-virtue/

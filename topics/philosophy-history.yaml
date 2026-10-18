@@ -1,0 +1,9 @@
+id: philosophy-history
+title: History of philosophy
+description: "A series in nine parts: from ancient Greece to AI and ethics. Each part lists the previous part as a prerequisite."
+parent: philosophy
+related: [history]
+i18n:
+  sl:
+    title: Zgodovina filozofije
+    description: "Serija v devetih delih: od antične Grčije do umetne inteligence in etike. Vsak del navaja prejšnji del kot predznanje."

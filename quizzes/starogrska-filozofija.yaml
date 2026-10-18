@@ -1,0 +1,46 @@
+article: aig-000010
+questions:
+  - id: q1
+    type: single
+    prompt: Kateri dokazi so se ohranili za večino predsokratikov?
+    options: ["Celotne knjige", "Fragmenti in pričevanja pri poznejših avtorjih", "Samo Platonovi dialogi", "Napisi"]
+    answer: 1
+    explain: Nobeno predsokratsko delo se ni ohranilo v celoti. Zanašamo se na navedke in poročila pri poznejših avtorjih.
+    ref: starogrska-filozofija#presocratics
+    difficulty: 1
+    tags: [predsokratiki, viri]
+  - id: q2
+    type: multi
+    prompt: Kateri od teh mislecev spadajo med predsokratike?
+    options: ["Tales", "Heraklit", "Aristotel", "Demokrit"]
+    answer: [0, 1, 3]
+    explain: Demokrit je bil mlajši Sokratov sodobnik, vendar ga uvrščajo med predsokratske atomiste. Aristotel je živel pozneje.
+    ref: starogrska-filozofija#presocratics
+    difficulty: 2
+    tags: [predsokratiki]
+  - id: q3
+    type: single
+    prompt: Kateri trije avtorji so glavni viri za Sokrata?
+    options: ["Platon, Aristotel in Plutarh", "Aristofan, Ksenofont in Platon", "Sokrat sam, v svojih knjigah", "Protagora, Platon in Ksenofont"]
+    answer: 1
+    explain: Sokrat ni ničesar napisal. Nalogo, da v teh treh virih najdemo zgodovinskega Sokrata, imenujemo sokratski problem.
+    ref: starogrska-filozofija#sophists-socrates
+    difficulty: 1
+    tags: [Sokrat, viri]
+  - id: q4
+    type: true_false
+    prompt: V Teajtetu primer s sodiščem pokaže, da je resnično mnenje dovolj za znanje.
+    answer: false
+    explain: Porotniki, ki jih prepričajo o resnici, imajo resnično mnenje, ki pa je preslabo utemeljeno, da bi bilo znanje.
+    ref: starogrska-filozofija#plato
+    difficulty: 2
+    tags: [Platon, znanje]
+  - id: q5
+    type: single
+    prompt: S čim mora biti po Aristotelu etična vrlina povezana, da je popolnoma razvita?
+    options: ["Z božjo zapovedjo", "S praktično modrostjo (phronesis)", "Z bogastvom", "S trdnimi pravili"]
+    answer: 1
+    explain: Nižja oblika vrline se razvije v otroštvu. Etična vrlina je popolnoma razvita šele skupaj s praktično modrostjo.
+    ref: starogrska-filozofija#aristotle-ethics
+    difficulty: 2
+    tags: [Aristotel, etika]

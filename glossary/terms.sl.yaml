@@ -44,3 +44,38 @@
   use_instead_of: [enostavni jezik]
   lang_pairs: {en: plain language}
   source: STYLE.md#writing-w
+- term: predsokratiki
+  meaning: Grški misleci 6. in 5. stoletja pr. n. št., ki so jih v antiki imeli za prve zahodne filozofe in znanstvenike.
+  use_instead_of: [presokratiki]
+  lang_pairs: {en: Presocratics}
+  source: starogrska-filozofija#presocratics
+- term: počelo
+  meaning: Izvor, iz katerega vse izhaja (gr. arhé), v zgodnji grški filozofiji narave.
+  use_instead_of: [prapočelo, pranačelo]
+  lang_pairs: {en: archê}
+  source: https://iep.utm.edu/thales/
+- term: vrlina
+  meaning: Odličnost človeka (gr. areté), ki so jo sofisti obljubljali učiti.
+  use_instead_of: [krepost (v tem pomenu)]
+  lang_pairs: {en: aretê, virtue}
+  source: https://iep.utm.edu/sophists/
+- term: resnično mnenje
+  meaning: Mnenje, ki je resnično, ne glede na to, ali je dobro utemeljeno. Pri Platonu gr. doxa.
+  use_instead_of: [pravilno mnenje, resnično prepričanje (za Platona)]
+  lang_pairs: {en: true belief}
+  source: starogrska-filozofija#plato
+- term: upravičeno resnično prepričanje
+  meaning: Sodobna analiza znanja kot prepričanja, ki je resnično in upravičeno.
+  use_instead_of: [utemeljeno resnično verjetje]
+  lang_pairs: {en: justified true belief}
+  source: https://plato.stanford.edu/entries/knowledge-analysis/
+- term: praktična modrost
+  meaning: Aristotelova phronesis, sposobnost videti, kaj je v posameznem primeru najbolje storiti.
+  use_instead_of: [razsodnost, preudarnost (v tem pomenu)]
+  lang_pairs: {en: practical wisdom}
+  source: https://plato.stanford.edu/entries/aristotle-ethics/
+- term: etika vrlin
+  meaning: Pristop v normativni etiki, ki poudarja vrline oziroma moralni značaj.
+  use_instead_of: [krepostna etika]
+  lang_pairs: {en: virtue ethics}
+  source: https://plato.stanford.edu/entries/ethics-virtue/
