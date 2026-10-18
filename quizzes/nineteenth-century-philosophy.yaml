@@ -1,0 +1,45 @@
+article: aig-000019
+questions:
+  - id: q1
+    type: single
+    prompt: What does Hegel's term aufheben (sublate) mean?
+    options: ["To discard entirely", "Both to cancel and to preserve", "To compromise between two opinions", "To record history"]
+    answer: 1
+    explain: Aufheben has a double meaning, both to cancel (or negate) and to preserve.
+    ref: nineteenth-century-philosophy#hegel
+    difficulty: 1
+    tags: [hegel, dialectic]
+  - id: q2
+    type: single
+    prompt: According to SEP, what role does preventing harm play in Mill's harm principle?
+    options: ["It is sufficient for any restriction", "It is necessary but not sufficient", "It is irrelevant", "It applies only to children"]
+    answer: 1
+    explain: Preventing harm is a necessary but not sufficient condition for justified restriction.
+    ref: nineteenth-century-philosophy#mill
+    difficulty: 2
+    tags: [mill, liberty]
+  - id: q3
+    type: true_false
+    prompt: Marx held that machinery as such is the root of alienation.
+    answer: false
+    explain: He blamed capitalist social relations and praised workers who distinguished machinery from its employment by capital.
+    ref: nineteenth-century-philosophy#marx
+    difficulty: 1
+    tags: [marx, alienation]
+  - id: q4
+    type: single
+    prompt: What does the Bodleian article call Lovelace's Bernoulli table?
+    options: ["A compiler", "An execution trace", "A punched card", "A difference table"]
+    answer: 1
+    explain: The table shows the successive changes in the machine. The program would have been the deck of punched cards.
+    ref: nineteenth-century-philosophy#lovelace
+    difficulty: 2
+    tags: [lovelace, computing]
+  - id: q5
+    type: true_false
+    prompt: Babbage built a working Analytical Engine in his lifetime.
+    answer: false
+    explain: The Analytical Engine was never built in Babbage's lifetime.
+    ref: nineteenth-century-philosophy#babbage-lovelace
+    difficulty: 1
+    tags: [babbage, computing]
