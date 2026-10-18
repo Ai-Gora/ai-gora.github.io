@@ -1,0 +1,46 @@
+article: aig-000014
+questions:
+  - id: q1
+    type: single
+    prompt: Kdo je Aristotelova logična dela prevedel v latinščino?
+    options: ["Avguštin", "Boecij", "Averroes", "Anzelm"]
+    answer: 1
+    explain: Boecij je Aristotelova logična dela prevedel v latinščino in napisal komentarje k njim.
+    ref: srednjeveska-filozofija#augustine-boethius
+    difficulty: 1
+    tags: [Boecij, logika]
+  - id: q2
+    type: single
+    prompt: Kateri filozof je znan kot »drugi učitelj« za Aristotelom?
+    options: ["al-Kindi", "Avicena", "al-Farabi", "Averroes"]
+    answer: 2
+    explain: Al-Farabi je znan kot drugi učitelj; prvi je Aristotel.
+    ref: srednjeveska-filozofija#falsafa
+    difficulty: 1
+    tags: [falsafa]
+  - id: q3
+    type: single
+    prompt: Zakaj je Ockham zavrnil realistične teorije univerzalij svojega časa?
+    options: ["Samo zaradi Ockhamove britve", "Ker je menil, da so naravnost protislovne", "Ker tostnost posamiči skupno naravo", "Ker jih je zavrnil Tomaž Akvinski"]
+    answer: 1
+    explain: Ockham ni izhajal iz britve. Menil je, da so realistične teorije njegovega časa protislovne.
+    ref: srednjeveska-filozofija#universals
+    difficulty: 2
+    tags: [Ockham, univerzalije]
+  - id: q4
+    type: true_false
+    prompt: Majmonid je menil, da je mogoče samo z logiko dokazati, da je bil svet ustvarjen.
+    answer: false
+    explain: Tako kot Tomaž Akvinski je menil, da samo z logiko ni mogoče pokazati ne ustvarjenja ne večnosti sveta.
+    ref: srednjeveska-filozofija#maimonides
+    difficulty: 2
+    tags: [Majmonid]
+  - id: q5
+    type: single
+    prompt: Od kod izvira opis Llullove Ars kot predhodnice Leibniza?
+    options: ["Iz Llullove Ars Magna", "Od Leibniza samega in poznejših razlagalcev, kot je Trendelenburg", "Iz obsodbe leta 1277", "Iz komentarjev Tomaža Akvinskega"]
+    answer: 1
+    explain: Leibniza je Llull navdihnil, a ga je kritiziral, Trendelenburg pa je Ars pozneje navedel kot predhodnico. Geslo o Llullu v SEP ne govori o računalništvu.
+    ref: srednjeveska-filozofija#llull
+    difficulty: 2
+    tags: [Llull, Leibniz]

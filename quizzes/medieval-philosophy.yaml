@@ -1,0 +1,46 @@
+article: aig-000013
+questions:
+  - id: q1
+    type: single
+    prompt: Who translated Aristotle's logical works into Latin?
+    options: ["Augustine", "Boethius", "Averroes", "Anselm"]
+    answer: 1
+    explain: Boethius translated Aristotle's logical works into Latin and wrote commentaries on them.
+    ref: medieval-philosophy#augustine-boethius
+    difficulty: 1
+    tags: [boethius, logic]
+  - id: q2
+    type: single
+    prompt: Which philosopher is known as "the second master" after Aristotle?
+    options: ["al-Kindi", "Avicenna", "al-Farabi", "Averroes"]
+    answer: 2
+    explain: Al-Farabi is known as the second master, the first being Aristotle.
+    ref: medieval-philosophy#falsafa
+    difficulty: 1
+    tags: [falsafa]
+  - id: q3
+    type: single
+    prompt: Why did Ockham reject the realist theories of universals of his time?
+    options: ["Because of Ockham's Razor alone", "Because he held them to be outright incoherent", "Because a haecceity individualises the common nature", "Because Aquinas had rejected them"]
+    answer: 1
+    explain: Ockham did not argue from the Razor. He held that the realist theories of his time were incoherent.
+    ref: medieval-philosophy#universals
+    difficulty: 2
+    tags: [ockham, universals]
+  - id: q4
+    type: true_false
+    prompt: Maimonides held that logic alone can prove that the universe was created.
+    answer: false
+    explain: Like Aquinas, he held that logic alone cannot show either creation or eternity.
+    ref: medieval-philosophy#maimonides
+    difficulty: 2
+    tags: [maimonides]
+  - id: q5
+    type: single
+    prompt: Where does the description of Llull's Ars as a precursor of Leibniz come from?
+    options: ["Llull's own Ars Magna", "Leibniz himself and later interpreters such as Trendelenburg", "The condemnation of 1277", "Aquinas's commentaries"]
+    answer: 1
+    explain: Leibniz was inspired by Llull but criticised him, and Trendelenburg later named the Ars as a precursor. SEP's Llull entry makes no computing claim.
+    ref: medieval-philosophy#llull
+    difficulty: 2
+    tags: [llull, leibniz]
