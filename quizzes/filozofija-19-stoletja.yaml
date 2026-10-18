@@ -1,0 +1,45 @@
+article: aig-000020
+questions:
+  - id: q1
+    type: single
+    prompt: Kaj pomeni Heglov izraz aufheben?
+    options: ["Popolnoma zavreči", "Hkrati odpraviti in ohraniti", "Skleniti kompromis med dvema mnenjema", "Zapisati zgodovino"]
+    answer: 1
+    explain: Aufheben ima dvojni pomen, hkrati odpraviti (ali zanikati) in ohraniti.
+    ref: filozofija-19-stoletja#hegel
+    difficulty: 1
+    tags: [Hegel, dialektika]
+  - id: q2
+    type: single
+    prompt: Kakšno vlogo ima po SEP preprečevanje škode v Millovem načelu škode?
+    options: ["Zadošča za vsako omejitev", "Je nujen, ne pa zadosten pogoj", "Ni pomembno", "Velja le za otroke"]
+    answer: 1
+    explain: Preprečevanje škode je nujen, ne pa zadosten pogoj za upravičeno omejitev.
+    ref: filozofija-19-stoletja#mill
+    difficulty: 2
+    tags: [Mill, svoboda]
+  - id: q3
+    type: true_false
+    prompt: Marx je trdil, da so stroji kot taki vir odtujitve.
+    answer: false
+    explain: Krivil je kapitalistična družbena razmerja in pohvalil delavce, ki so stroje ločili od tega, kako jih uporablja kapital.
+    ref: filozofija-19-stoletja#marx
+    difficulty: 1
+    tags: [Marx, odtujitev]
+  - id: q4
+    type: single
+    prompt: Kako članek iz knjižnice Bodleian imenuje Lovelacino tabelo Bernoullijevih števil?
+    options: ["Prevajalnik", "Sled izvajanja", "Luknjana kartica", "Diferenčna tabela"]
+    answer: 1
+    explain: Tabela prikazuje zaporedne spremembe v stroju. Program bi bil sveženj luknjanih kartic.
+    ref: filozofija-19-stoletja#lovelace
+    difficulty: 2
+    tags: [Lovelace, računalništvo]
+  - id: q5
+    type: true_false
+    prompt: Babbage je za svojega življenja izdelal delujoč analitični stroj.
+    answer: false
+    explain: Analitičnega stroja za Babbageovega življenja niso nikoli izdelali.
+    ref: filozofija-19-stoletja#babbage-lovelace
+    difficulty: 1
+    tags: [Babbage, računalništvo]

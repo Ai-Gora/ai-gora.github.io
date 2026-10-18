@@ -57,18 +57,23 @@
 - term: archê
   meaning: The originating principle from which things come, in early Greek natural philosophy.
   use_instead_of: [first substance, arche (unaccented, in Aigora text)]
-  lang_pairs: {sl: arhé (počelo)}
+  lang_pairs: {sl: počelo}
   source: https://iep.utm.edu/thales/
 - term: aretê
   meaning: Virtue or excellence, the quality the Sophists claimed to teach.
   use_instead_of: [arete (unaccented, in Aigora text)]
-  lang_pairs: {sl: areté (vrlina)}
+  lang_pairs: {sl: vrlina}
   source: https://iep.utm.edu/sophists/
 - term: true belief
   meaning: A belief that is true, whether or not it is well grounded. In Plato, true judgement (doxa).
   use_instead_of: [right opinion, correct opinion]
   lang_pairs: {sl: resnično mnenje}
   source: ancient-greek-philosophy#plato
+- term: justified true belief
+  meaning: The traditional analysis of knowledge as a belief that is both true and justified (JTB).
+  use_instead_of: [warranted true belief, JTB (unexplained)]
+  lang_pairs: {sl: upravičeno resnično prepričanje}
+  source: https://plato.stanford.edu/entries/knowledge-analysis/
 - term: practical wisdom
   meaning: Aristotle's phronêsis, the ability to see what is best to do in a particular case.
   use_instead_of: [prudence]

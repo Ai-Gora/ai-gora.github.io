@@ -1,0 +1,45 @@
+article: aig-000026
+questions:
+  - id: q1
+    type: single
+    prompt: Katere tri grške pojme po SEP ohranja sodobna etika vrlin?
+    options: ["Logos, etos in patos", "Arete, phronesis in eudaimonia", "Ataraksija, apatija in aponija", "Techne, episteme in nus"]
+    answer: 1
+    explain: Vrlina, praktična modrost in razcvet.
+    ref: umetna-inteligenca-in-etika#traditions
+    difficulty: 1
+    tags: [etika vrlin]
+  - id: q2
+    type: true_false
+    prompt: SEP poroča, da je dve pogosti merili pravičnosti iz razprave o COMPAS vedno mogoče izpolniti hkrati.
+    answer: false
+    explain: Razen v zelo nenavadnih okoliščinah ju ni mogoče izpolniti hkrati.
+    ref: umetna-inteligenca-in-etika#fairness
+    difficulty: 2
+    tags: [pravičnost, COMPAS]
+  - id: q3
+    type: single
+    prompt: Kaj pomeni »vrzel v odgovornosti« pri avtonomnem orožju (Sparrow 2007)?
+    options: ["Za orožje je vedno odgovoren proizvajalec", "Morda ni odgovoren ne človek ne stroj", "Odgovoren je le poveljnik", "Mednarodno pravo vsa taka orožja prepoveduje"]
+    answer: 1
+    explain: Tako Sparrowovo misel povzema SEP.
+    ref: umetna-inteligenca-in-etika#responsibility
+    difficulty: 1
+    tags: [odgovornost, orožje]
+  - id: q4
+    type: single
+    prompt: Kdaj je bila Uredba (EU) 2024/1689, akt o UI, objavljena v Uradnem listu?
+    options: ["13. junija 2024", "12. julija 2024", "1. avgusta 2024", "2. avgusta 2026"]
+    answer: 1
+    explain: Nosi datum 13. junij 2024 (podpis), objavljena je bila 12. julija 2024, veljati je začela 1. avgusta 2024.
+    ref: umetna-inteligenca-in-etika#eu-ai-act
+    difficulty: 2
+    tags: [akt o UI, pravo]
+  - id: q5
+    type: true_false
+    prompt: Po aktu o UI, kot ga je spremenila Uredba (EU) 2026/1744, se obveznosti za visoko tvegane sisteme iz Priloge III uporabljajo od 2. decembra 2027.
+    answer: true
+    explain: Sistemi iz Priloge I sledijo 2. avgusta 2028.
+    ref: umetna-inteligenca-in-etika#eu-ai-act
+    difficulty: 2
+    tags: [akt o UI, digitalni omnibus]

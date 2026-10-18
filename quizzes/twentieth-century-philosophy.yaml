@@ -1,0 +1,46 @@
+article: aig-000021
+questions:
+  - id: q1
+    type: single
+    prompt: What does Gödel's second incompleteness theorem say?
+    options: ["Every true statement of arithmetic is provable", "A consistent system with enough arithmetic cannot prove its own consistency", "First-order logic is incomplete", "Minds are not machines"]
+    answer: 1
+    explain: Such a system cannot prove its own consistency. Completeness of first-order logic is a different result.
+    ref: twentieth-century-philosophy#goedel-turing
+    difficulty: 2
+    tags: [goedel, logic]
+  - id: q2
+    type: true_false
+    prompt: SEP reports wide consensus that Gödel's theorems prove that minds are not machines.
+    answer: false
+    explain: SEP reports wide consensus that these anti-mechanist arguments fail.
+    ref: twentieth-century-philosophy#goedel-turing
+    difficulty: 2
+    tags: [goedel, mind]
+  - id: q3
+    type: single
+    prompt: What did Turing propose instead of asking "Can machines think?"
+    options: ["A consciousness test", "Whether a computer can do well in an imitation game", "A proof of the Church–Turing thesis", "A brain scan"]
+    answer: 1
+    explain: Turing called the original question too meaningless to discuss and replaced it with the imitation game.
+    ref: twentieth-century-philosophy#turing
+    difficulty: 1
+    tags: [turing]
+  - id: q4
+    type: single
+    prompt: What does Heidegger call the way entities appear in the technological age?
+    options: ["Epoché", "Bestand (stock)", "Language-game", "Paradigm"]
+    answer: 1
+    explain: Entities appear as Bestand, a stock of replaceable items. Heidegger called this mode of revealing the supreme danger.
+    ref: twentieth-century-philosophy#phenomenology
+    difficulty: 2
+    tags: [heidegger, technology]
+  - id: q5
+    type: single
+    prompt: What did Wiener warn about in 1960?
+    options: ["That machines can never learn", "That human criticism of fast machines may come too late", "That computers will never play checkers", "That feedback is impossible"]
+    answer: 1
+    explain: Machines are theoretically subject to human criticism, but such criticism may be ineffective until long after it is relevant.
+    ref: twentieth-century-philosophy#wiener
+    difficulty: 1
+    tags: [wiener, automation]

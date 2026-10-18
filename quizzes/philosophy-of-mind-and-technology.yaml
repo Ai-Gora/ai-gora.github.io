@@ -1,0 +1,45 @@
+article: aig-000023
+questions:
+  - id: q1
+    type: single
+    prompt: What does the multiple realizability thesis claim?
+    options: ["Every mental kind is identical to one brain state", "One mental kind can be realized by many distinct physical kinds", "Minds cannot be physical", "Only biological systems have mental states"]
+    answer: 1
+    explain: Putnam used this against brain-state theories, and later against functionalism.
+    ref: philosophy-of-mind-and-technology#functionalism
+    difficulty: 1
+    tags: [functionalism, putnam]
+  - id: q2
+    type: single
+    prompt: What is Searle's narrow conclusion from the Chinese Room?
+    options: ["Computers are too slow to pass the Turing test", "A program may make a computer appear to understand but cannot produce real understanding", "Brains are digital computers", "Chinese cannot be translated by machine"]
+    answer: 1
+    explain: The broader conclusion is that minds result from biological processes.
+    ref: philosophy-of-mind-and-technology#chinese-room
+    difficulty: 1
+    tags: [searle, understanding]
+  - id: q3
+    type: true_false
+    prompt: According to IEP, the hard problem of consciousness was entirely new when Chalmers named it.
+    answer: false
+    explain: IEP says Chalmers coined the name, but the problem is not wholly new.
+    ref: philosophy-of-mind-and-technology#hard-problem
+    difficulty: 2
+    tags: [chalmers, consciousness]
+  - id: q4
+    type: single
+    prompt: What, according to SEP, does human expertise not rest on, in Dreyfus's view?
+    options: ["Embodied skill", "Explicit, disembodied, mechanical manipulation of symbolic information", "Practice", "Perception"]
+    answer: 1
+    explain: Dreyfus argued that symbolic AI misunderstands human expertise.
+    ref: philosophy-of-mind-and-technology#dreyfus
+    difficulty: 2
+    tags: [dreyfus, ai]
+  - id: q5
+    type: true_false
+    prompt: Butlin et al. (2023 preprint) conclude that no current AI systems are conscious.
+    answer: true
+    explain: They also see no obvious technical barriers to systems that meet their indicators.
+    ref: philosophy-of-mind-and-technology#llms
+    difficulty: 1
+    tags: [llm, consciousness]
