@@ -1,0 +1,45 @@
+article: aig-000015
+questions:
+  - id: q1
+    type: true_false
+    prompt: Pico della Mirandola gave his speech on human dignity in Rome in 1487 under the title "Oration on the Dignity of Man".
+    answer: false
+    explain: Pico never gave or published the speech and never gave it a title. Others named it after his death.
+    ref: renaissance-early-modern-philosophy#pico
+    difficulty: 2
+    tags: [pico, humanism]
+  - id: q2
+    type: single
+    prompt: In Bacon's tables of instances for heat, what role do the moon's rays play?
+    options: ["A positive instance", "A negative instance", "An idol of the tribe", "A measure of degree"]
+    answer: 1
+    explain: The moon's rays are a negative instance, so light is excluded as the form of heat.
+    ref: renaissance-early-modern-philosophy#bacon-descartes
+    difficulty: 2
+    tags: [bacon, induction]
+  - id: q3
+    type: single
+    prompt: How did Hobbes describe reasoning in Leviathan?
+    options: ["As recollection of innate ideas", "As nothing but reckoning, adding and subtracting", "As the suspension of judgement", "As the vision of God"]
+    answer: 1
+    explain: Hobbes called reasoning "nothing but reckoning", that is, adding and subtracting the consequences of general names.
+    ref: renaissance-early-modern-philosophy#hobbes-spinoza
+    difficulty: 1
+    tags: [hobbes, computation]
+  - id: q4
+    type: single
+    prompt: What does Leibniz's mill thought experiment aim to show?
+    options: ["That machines can perceive", "That perception cannot be explained by parts pushing one another", "That the mind is a calculating machine", "That mills are monads"]
+    answer: 1
+    explain: Inside an enlarged thinking machine one would find only parts pushing one another, and nothing that explains a perception.
+    ref: renaissance-early-modern-philosophy#consciousness
+    difficulty: 2
+    tags: [leibniz, mind]
+  - id: q5
+    type: true_false
+    prompt: For Locke, personal identity reaches as far back as consciousness can be extended.
+    answer: true
+    explain: Locke tied personal identity to consciousness, not to the sameness of body or soul.
+    ref: renaissance-early-modern-philosophy#locke
+    difficulty: 1
+    tags: [locke, personal-identity]
