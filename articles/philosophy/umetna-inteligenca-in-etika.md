@@ -128,7 +128,7 @@ flowchart TD
 - **Uredba (EU) 2026/1744**, digitalni omnibus o UI (CELEX 32026R1744), je bila podpisana 8. julija 2026. Objavljena je bila 24. julija 2026 in je začela veljati tri dni pozneje.[^14]
 - **Postopek:** Komisija jo je predlagala 19. novembra 2025 (COM(2025) 836). Parlament je stališče sprejel 16. junija 2026, Svet pa 29. junija 2026.[^15][^14]
 - **Prepovedi** med drugim zajemajo škodljivo manipulacijo, družbeno točkovanje, neciljno zbiranje podob obrazov in prepoznavanje čustev na delovnem mestu in v izobraževanju.[^16]
-- **Nova prepoved iz leta 2026:** UI, ki ustvarja intimne podobe brez privolitve, na primer aplikacije za »slačenje« (nudification), ali gradivo o spolni zlorabi otrok. Uporablja se od 2. decembra 2026.[^16][^13]
+- **Nova prepoved iz leta 2026:** UI, ki ustvarja intimno gradivo brez privolitve, na primer aplikacije za »slačenje«, ali gradivo spolne zlorabe otrok. Uporablja se od 2. decembra 2026.[^16][^13][^14]
 - **Druge spremembe:** novi člen 4a daje pravno podlago za obdelavo posebnih vrst osebnih podatkov za odkrivanje pristranskosti. Poenostavitve veljajo tudi za mala podjetja s srednje veliko tržno kapitalizacijo.[^14][^16]
 - Člen 2(7) ohranja veljavnost GDPR in drugega prava EU o varstvu podatkov, ob upoštevanju členov 4a in 59.[^13]
 

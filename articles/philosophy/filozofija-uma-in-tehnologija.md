@@ -113,10 +113,10 @@ flowchart TD
 - SEP: za Dreyfusa človeško strokovno znanje ne temelji na »eksplicitnem, neutelešenem, mehaničnem upravljanju simbolnih informacij«.[^9]
 - Založnik piše, da je neuspeh napovedal, ker je bilo pojmovanje duševnega delovanja v UI »naivno«.[^10]
 
-### Nagel in kvaliji {#nagel}
+### Nagel in takšnosti {#nagel}
 
 - Thomas Nagel (1974) je trdil, da so netopirji zavestni, ker je »nekaj, kar je biti netopir«.[^11]
-- **Kvaliji** so »introspektivno dostopni, fenomenalni vidiki našega duševnega življenja«. Najbolj znan miselni poskus o njih je Jacksonova Marija, znanstvenica za barve, odraščala v črno-beli sobi.[^12]
+- **Takšnosti** (lat. *qualia*) so »introspektivno dostopni, fenomenalni vidiki našega duševnega življenja«. Najbolj znan miselni poskus o njih je Jacksonova Marija, znanstvenica za barve, ki je odraščala v črno-beli sobi.[^12]
 
 ### Chalmers: težki problem {#hard-problem}
 

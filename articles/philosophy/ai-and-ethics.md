@@ -128,7 +128,7 @@ flowchart TD
 - **Regulation (EU) 2026/1744**, the Digital Omnibus on AI (CELEX 32026R1744), was signed on 8 July 2026. It was published on 24 July 2026 and entered into force three days later.[^14]
 - **Procedure:** the Commission proposed it on 19 November 2025 (COM(2025) 836). Parliament adopted its position on 16 June 2026 and the Council on 29 June 2026.[^15][^14]
 - **Prohibitions** include harmful manipulation, social scoring, untargeted facial scraping and emotion recognition at work and in education.[^16]
-- **New 2026 prohibition:** AI that generates non-consensual intimate images, such as "nudification" apps, or child sexual abuse material. It applies from 2 December 2026.[^16][^13]
+- **New 2026 prohibition:** AI that generates non-consensual intimate images, such as "nudification" apps, or child sexual abuse material. It applies from 2 December 2026.[^16][^13][^14]
 - **Other changes:** a legal basis for processing special-category data to detect bias (new Article 4a) and simpler rules for small mid-caps.[^14][^16]
 - Article 2(7) keeps the GDPR and other EU data-protection law in force, subject to Articles 4a and 59.[^13]
 
