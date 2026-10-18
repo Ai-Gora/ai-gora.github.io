@@ -1,0 +1,45 @@
+article: aig-000024
+questions:
+  - id: q1
+    type: single
+    prompt: Kaj trdi teza o večkratni uresničljivosti?
+    options: ["Vsaka duševna vrsta je istovetna z enim možganskim stanjem", "Eno duševno vrsto lahko uresničijo številne različne fizične vrste", "Umi ne morejo biti fizični", "Duševna stanja imajo le biološki sistemi"]
+    answer: 1
+    explain: Putnam jo je uporabil proti teorijam možganskih stanj, pozneje pa proti funkcionalizmu.
+    ref: filozofija-uma-in-tehnologija#functionalism
+    difficulty: 1
+    tags: [funkcionalizem, Putnam]
+  - id: q2
+    type: single
+    prompt: Kaj je Searlov ožji sklep iz kitajske sobe?
+    options: ["Računalniki so prepočasni za Turingov test", "Program lahko poskrbi, da je videti, kot da računalnik razume, pravega razumevanja pa ne more ustvariti", "Možgani so digitalni računalniki", "Kitajščine stroj ne more prevesti"]
+    answer: 1
+    explain: Širši sklep je, da umi izhajajo iz bioloških procesov.
+    ref: filozofija-uma-in-tehnologija#chinese-room
+    difficulty: 1
+    tags: [Searle, razumevanje]
+  - id: q3
+    type: true_false
+    prompt: Po IEP je bil težki problem zavesti povsem nov, ko ga je Chalmers poimenoval.
+    answer: false
+    explain: IEP pravi, da je Chalmers skoval ime, problem sam pa ni povsem nov.
+    ref: filozofija-uma-in-tehnologija#hard-problem
+    difficulty: 2
+    tags: [Chalmers, zavest]
+  - id: q4
+    type: single
+    prompt: Na čem po SEP človeško strokovno znanje v Dreyfusovem pogledu ne temelji?
+    options: ["Na utelešeni veščini", "Na eksplicitnem, neutelešenem, mehaničnem upravljanju simbolnih informacij", "Na vaji", "Na zaznavanju"]
+    answer: 1
+    explain: Dreyfus je trdil, da simbolna UI človeškega strokovnega znanja ne razume.
+    ref: filozofija-uma-in-tehnologija#dreyfus
+    difficulty: 2
+    tags: [Dreyfus, UI]
+  - id: q5
+    type: true_false
+    prompt: Butlin in sodelavci (preprint, 2023) sklenejo, da noben sedanji sistem UI ni zavesten.
+    answer: true
+    explain: Ne vidijo pa očitnih tehničnih ovir za sisteme, ki bi izpolnjevali njihove kazalnike.
+    ref: filozofija-uma-in-tehnologija#llms
+    difficulty: 1
+    tags: [LLM, zavest]
