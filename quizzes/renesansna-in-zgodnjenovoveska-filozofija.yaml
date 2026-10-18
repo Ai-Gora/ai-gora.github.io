@@ -1,0 +1,45 @@
+article: aig-000016
+questions:
+  - id: q1
+    type: true_false
+    prompt: Pico della Mirandola je svoj govor o človekovem dostojanstvu leta 1487 izrekel v Rimu z naslovom »Govor o človekovem dostojanstvu«.
+    answer: false
+    explain: Pico govora ni nikoli izrekel ne objavil in mu ni dal naslova. Poimenovali so ga drugi po njegovi smrti.
+    ref: renesansna-in-zgodnjenovoveska-filozofija#pico
+    difficulty: 2
+    tags: [Pico, humanizem]
+  - id: q2
+    type: single
+    prompt: Kakšno vlogo imajo mesečevi žarki v Baconovih tabelah primerov za toploto?
+    options: ["Pozitiven primer", "Negativen primer", "Malik rodu", "Merilo stopnje"]
+    answer: 1
+    explain: Mesečevi žarki so negativen primer, zato svetloba ne more biti forma toplote.
+    ref: renesansna-in-zgodnjenovoveska-filozofija#bacon-descartes
+    difficulty: 2
+    tags: [Bacon, indukcija]
+  - id: q3
+    type: single
+    prompt: Kako je Hobbes v Leviatanu opisal mišljenje?
+    options: ["Kot spominjanje prirojenih idej", "Kot nič drugega kot računanje, seštevanje in odštevanje", "Kot zadržanje sodbe", "Kot zrenje Boga"]
+    answer: 1
+    explain: Hobbes je mišljenje imenoval »nič drugega kot računanje«, torej seštevanje in odštevanje posledic splošnih imen.
+    ref: renesansna-in-zgodnjenovoveska-filozofija#hobbes-spinoza
+    difficulty: 1
+    tags: [Hobbes, računanje]
+  - id: q4
+    type: single
+    prompt: Kaj želi pokazati Leibnizev miselni poskus z mlinom?
+    options: ["Da stroji lahko zaznavajo", "Da zaznave ni mogoče razložiti z deli, ki se potiskajo", "Da je um računski stroj", "Da so mlini monade"]
+    answer: 1
+    explain: V povečanem mislečem stroju bi našli le dele, ki se potiskajo, in nič, kar bi razložilo zaznavo.
+    ref: renesansna-in-zgodnjenovoveska-filozofija#consciousness
+    difficulty: 2
+    tags: [Leibniz, um]
+  - id: q5
+    type: true_false
+    prompt: Za Locka osebna identiteta sega tako daleč nazaj, kot lahko seže zavest.
+    answer: true
+    explain: Locke je osebno identiteto povezal z zavestjo, ne z istostjo telesa ali duše.
+    ref: renesansna-in-zgodnjenovoveska-filozofija#locke
+    difficulty: 1
+    tags: [Locke, osebna identiteta]
