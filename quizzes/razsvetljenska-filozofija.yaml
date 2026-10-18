@@ -1,0 +1,45 @@
+article: aig-000018
+questions:
+  - id: q1
+    type: single
+    prompt: S čim Humova prva opredelitev vzroka enači vzročnost?
+    options: ["Z nujno povezanostjo", "S stalno povezanostjo", "Z Božjo voljo", "S prirojeno idejo"]
+    answer: 1
+    explain: Prva opredelitev vzročnost enači s stalno povezanostjo. Druga se sklicuje na notranje pričakovanje.
+    ref: razsvetljenska-filozofija#empiricism
+    difficulty: 1
+    tags: [Hume, vzročnost]
+  - id: q2
+    type: single
+    prompt: Kaj je Kant v prvi Kritiki predlagal predpostaviti?
+    options: ["Da se mora spoznanje ravnati po predmetih", "Da se morajo predmeti ravnati po našem spoznanju", "Da nas motivirajo le čustva", "Da Bog jamči za naše ideje"]
+    answer: 1
+    explain: Kant je poskusil predpostaviti, da se morajo predmeti ravnati po našem spoznanju, in to primerjal s Kopernikovo novo hipotezo.
+    ref: razsvetljenska-filozofija#kant
+    difficulty: 2
+    tags: [Kant]
+  - id: q3
+    type: true_false
+    prompt: Hume je trdil, da je jaz substanca, ki leži pod našimi zaznavami.
+    answer: false
+    explain: Hume je jaz enačil s snopom ali zaporedjem zaznav, čeprav je pozneje o tej teoriji izrazil dvome.
+    ref: razsvetljenska-filozofija#bundle
+    difficulty: 1
+    tags: [Hume, jaz]
+  - id: q4
+    type: single
+    prompt: Čigava moralna teorija je osredinjena na nepristranskega opazovalca?
+    options: ["Benthamova", "Rousseaujeva", "Smithova", "La Mettriejeva"]
+    answer: 2
+    explain: Za Adama Smitha moralne norme izražajo čustva nepristranskega opazovalca.
+    ref: razsvetljenska-filozofija#smith-bentham
+    difficulty: 1
+    tags: [Smith, etika]
+  - id: q5
+    type: true_false
+    prompt: Vaucansonova raca je zrnje, ki ga je pojedla, res prebavila.
+    answer: false
+    explain: Hrana je šla v eno votlino, kroglica pa je prišla iz ločene zaloge zeleno obarvanih krušnih drobtin.
+    ref: razsvetljenska-filozofija#vaucanson
+    difficulty: 1
+    tags: [avtomati, Vaucanson]

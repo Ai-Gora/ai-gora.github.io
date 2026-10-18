@@ -1,0 +1,45 @@
+article: aig-000017
+questions:
+  - id: q1
+    type: single
+    prompt: What does Hume's first definition of cause identify causation with?
+    options: ["Necessary connection", "Constant conjunction", "Divine will", "An innate idea"]
+    answer: 1
+    explain: The first definition identifies causation with constant conjunction. The second appeals to an inner expectation.
+    ref: enlightenment-philosophy#empiricism
+    difficulty: 1
+    tags: [hume, causation]
+  - id: q2
+    type: single
+    prompt: In the first Critique, what did Kant propose to assume?
+    options: ["That cognition must conform to objects", "That objects must conform to our cognition", "That only feelings motivate", "That God guarantees our ideas"]
+    answer: 1
+    explain: Kant tried assuming that objects must conform to our cognition, and compared this to Copernicus's new hypothesis.
+    ref: enlightenment-philosophy#kant
+    difficulty: 2
+    tags: [kant]
+  - id: q3
+    type: true_false
+    prompt: Hume held that the self is a substance underlying our perceptions.
+    answer: false
+    explain: Hume identified the self with a bundle or succession of perceptions, though he later voiced doubts about this theory.
+    ref: enlightenment-philosophy#bundle
+    difficulty: 1
+    tags: [hume, self]
+  - id: q4
+    type: single
+    prompt: Whose moral theory centres on the impartial spectator?
+    options: ["Bentham", "Rousseau", "Adam Smith", "La Mettrie"]
+    answer: 2
+    explain: For Smith, moral norms express the feelings of an impartial spectator.
+    ref: enlightenment-philosophy#smith-bentham
+    difficulty: 1
+    tags: [smith, ethics]
+  - id: q5
+    type: true_false
+    prompt: Vaucanson's duck really digested the grain it ate.
+    answer: false
+    explain: The food went into one cavity, and the pellet came from a separate store of green-dyed breadcrumbs.
+    ref: enlightenment-philosophy#vaucanson
+    difficulty: 1
+    tags: [automata, vaucanson]
