@@ -1,0 +1,46 @@
+article: aig-000022
+questions:
+  - id: q1
+    type: single
+    prompt: Kaj pravi Gödlov drugi izrek o nepopolnosti?
+    options: ["Vsaka resnična aritmetična izjava je dokazljiva", "Konsistenten sistem z dovolj aritmetike ne more dokazati lastne konsistentnosti", "Logika prvega reda ni polna", "Umi niso stroji"]
+    answer: 1
+    explain: Tak sistem ne more dokazati lastne konsistentnosti. Polnost logike prvega reda je drug rezultat.
+    ref: filozofija-20-stoletja#goedel-turing
+    difficulty: 2
+    tags: [Gödel, logika]
+  - id: q2
+    type: true_false
+    prompt: SEP poroča o širokem soglasju, da Gödlovi izreki dokazujejo, da umi niso stroji.
+    answer: false
+    explain: SEP poroča o širokem soglasju, da ti antimehanistični argumenti ne držijo.
+    ref: filozofija-20-stoletja#goedel-turing
+    difficulty: 2
+    tags: [Gödel, um]
+  - id: q3
+    type: single
+    prompt: Kaj je Turing predlagal namesto vprašanja »Ali stroji lahko mislijo?«
+    options: ["Test zavesti", "Ali se računalnik dobro odreže v igri posnemanja", "Dokaz Church–Turingove teze", "Slikanje možganov"]
+    answer: 1
+    explain: Turing je prvotno vprašanje označil za preveč brez pomena in ga nadomestil z igro posnemanja.
+    ref: filozofija-20-stoletja#turing
+    difficulty: 1
+    tags: [Turing]
+  - id: q4
+    type: single
+    prompt: Kako Heidegger imenuje način, kako se bivajoče kaže v tehnološki dobi?
+    options: ["Epoché", "Bestand (zaloga)", "Jezikovna igra", "Paradigma"]
+    answer: 1
+    explain: Bivajoče se kaže kot Bestand, zaloga zamenljivih stvari. Heidegger je ta način razkrivanja imenoval najvišja nevarnost.
+    ref: filozofija-20-stoletja#phenomenology
+    difficulty: 2
+    tags: [Heidegger, tehnologija]
+  - id: q5
+    type: single
+    prompt: Na kaj je Wiener opozoril leta 1960?
+    options: ["Da se stroji nikoli ne morejo učiti", "Da lahko človeška kritika hitrih strojev pride prepozno", "Da računalniki nikoli ne bodo igrali dam", "Da povratna zanka ni mogoča"]
+    answer: 1
+    explain: Stroji so teoretično podvrženi človeški kritiki, a ta je lahko neučinkovita še dolgo potem, ko bi bila pomembna.
+    ref: filozofija-20-stoletja#wiener
+    difficulty: 1
+    tags: [Wiener, avtomatizacija]
