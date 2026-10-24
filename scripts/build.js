@@ -3,6 +3,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { checkGlossaryPairs, strictGlossary } from './glossary.js';
 import { loadContent, buildOutputs, mergeOutputs, mediaOutputs, resolveOutDir } from './lib.js';
 import { buildSite } from './site.js';
 import { buildCharts } from './charts.js';
@@ -18,6 +19,9 @@ const writeCharts = args.includes('--write-charts');
 const { errors, warnings, content } = loadContent(root);
 const charts = await buildCharts(root, { write: writeCharts });
 errors.push(...charts.errors);
+// STYLE W8 glossary pairs: warnings until the open entries are fixed; --strict-glossary (or AIGORA_STRICT_GLOSSARY=1) makes them errors.
+const glossary = checkGlossaryPairs(root).map((p) => `${p} (STYLE W8)`);
+(strictGlossary(args) ? errors : warnings).push(...glossary);
 if (warnings.length) {
   console.warn(`⚠ ${warnings.length} style warning(s) (not failing):`);
   for (const w of warnings) console.warn(`  - ${w}`);
