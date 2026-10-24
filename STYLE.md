@@ -14,7 +14,7 @@ How to write, structure and illustrate Aigora articles so both people and machin
 5. **Plain verbs.** Write "measure" rather than "carry out a measurement". Avoid phrasal verbs when a single verb exists, for example "remove" rather than "take out".
 6. **Steps.** Write steps as commands, one action per step. State a condition before the action: "If X, do Y."
 7. **One word, one meaning.** Use each term with one meaning only, and use one term per concept. Don't swap in synonyms for variety.
-8. **Aigora word list.** Preferred and banned terms live in `glossary/terms.<lang>.yaml`: `term`, `meaning`, `use_instead_of`, `lang_pairs`, `source`. Add a term the first time you need it. CI warns when an article uses a banned synonym. Start small with real terms from real articles; don't build a dictionary up front.
+8. **Aigora word list.** Preferred and banned terms live in `glossary/terms.<lang>.yaml`: `term`, `meaning`, `use_instead_of`, `lang_pairs`, `source`. Add a term the first time you need it. CI warns when an article uses a banned synonym, and when an EN↔SL `lang_pairs` link does not resolve in both directions (an error once `--strict-glossary` is on). Start small with real terms from real articles; don't build a dictionary up front.
 9. **Technical terms.** Allowed, but define each one in plain words the first time it appears. Keep noun stacks to three words at most: write "dialect boundary map", not "regional dialect boundary map data".
 10. **No filler.** Cut hedges, hype, idioms, jokes and rhetorical questions. Keep the tone neutral.
 11. **Numbers and units.**
@@ -67,7 +67,7 @@ How to write, structure and illustrate Aigora articles so both people and machin
    - `chart.vl.json`, a Vega-Lite spec that points to the data with `url`
    - `README.md` with a data source citation and a long description
 
-   `npm run charts` renders the spec and writes the published raster `media/<slug>/<chart>.png`, its sidecar, and `render.json` (hashes). CI fails if the PNG is out of date with the spec and data, or was edited by hand. Don't use hand-edited charts or screenshots of charts.
+   `npm run charts` renders the spec and writes the published raster `media/<slug>/<chart>.png`, its sidecar, and `render.json` (hashes). CI fails if the PNG is out of date with the spec and data, was edited by hand, or differs from a fresh render with the pinned fonts in `fonts/`. Chart data must be data files (CSV, TSV, JSON, TopoJSON, GeoJSON); chart images must be PNG, JPEG or GIF files in the chart folder. Don't use hand-edited charts or screenshots of charts.
 4. **Alt text, required.** Every image has alt text that gives its *purpose* in 125 characters or fewer. Decorative images use empty alt (`![]()`) and are rare.
 5. **Long description for complex images.** Charts, diagrams, maps and annotated photos also need a long description that gives the essential information, as a list or a table of the key values. Put it in the chart `README.md`, or directly after the image under `<details><summary>Description</summary>`.
 6. **Captions.** Put a caption under each figure in the form `*Figure n. What it shows, and the key takeaway. Source/credit.*` The caption must not simply repeat the alt text.

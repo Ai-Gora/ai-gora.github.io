@@ -6,7 +6,7 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { checkLicense, checkMediaDir, checkAccessibility, sentenceWarnings } from '../scripts/style.js';
-import { buildCharts as buildChartsRaw, renderChart as renderChartRaw, safeDataPath, sanitizeChartUrl } from '../scripts/charts.js';
+import { buildCharts as buildChartsRaw, renderChart as renderChartRaw, safeDataPath, sanitizeChartUrl, rasterise, FONT_FILES, DATA_EXT } from '../scripts/charts.js';
 
 // Regression guard: every SVG produced by any test in this file is checked for "javascript:" once all tests finish.
 // aria-label attributes are excluded: Vega-Lite echoes data values (including the hostile ones fed in below) there as inert, escaped text.
@@ -501,4 +501,92 @@ test('mermaid: ordinary labels and plain shape data still pass after the review 
     ['  C@{ shape: rect }', '  D["A & B, 3 * 4?"]'],
   ];
   for (const lines of ok) assert.deepEqual(mermaidProblems([...SAFE, '  A --> B', ...lines].join('\n')), [], lines.join(' | '));
+});
+
+// Follow-ups: data file types, chart images in the PNG, CI re-rasterise drift check, pinned fonts.
+const RED = () => rasterise('<svg xmlns="http://www.w3.org/2000/svg" width="4" height="4"><rect width="4" height="4" fill="red"/></svg>');
+const imgSpec = (u) => ({ data: { values: [{ a: 1 }] }, mark: { type: 'image', width: 40, height: 40 }, encoding: { url: { value: u }, x: { field: 'a', type: 'quantitative' } } });
+
+test('chart data urls must be data files; images must be raster images; links only to those', () => {
+  const { dir } = chartDir(SPEC);
+  for (const f of ['notes.md', 'secret.env', 'run.js', 'page.html', 'x.svg', 'data.json', 'map.topojson']) write(dir, f, '{}');
+  assert.ok(DATA_EXT.includes('.csv') && DATA_EXT.includes('.geojson'));
+  assert.equal(safeDataPath(dir, 'data.json'), path.join(fs.realpathSync(dir), 'data.json'));
+  assert.ok(safeDataPath(dir, 'map.topojson'));
+  for (const f of ['notes.md', 'secret.env', 'run.js', 'page.html', 'x.svg', 'README.md']) assert.throws(() => safeDataPath(dir, f), /must be one of these file types: \.csv/, f);
+  write(dir, 'pic.png', 'PNG');
+  assert.equal(sanitizeChartUrl(dir, 'pic.png', 'image'), 'pic.png');
+  assert.equal(sanitizeChartUrl(dir, 'data.csv', 'image'), '');
+  assert.equal(sanitizeChartUrl(dir, 'x.svg', 'image'), '');
+  assert.equal(sanitizeChartUrl(dir, 'data.csv', 'href'), 'data.csv');
+  assert.equal(sanitizeChartUrl(dir, 'notes.md', 'href'), '');
+  assert.equal(sanitizeChartUrl(dir, 'secret.env', 'href'), '');
+});
+
+test('chart data: a spec pointing at a non-data file fails the check', async () => {
+  const { r } = chartDir({ ...SPEC, data: { url: 'README.md', format: { type: 'csv' } } });
+  assert.match((await buildCharts(r)).errors.join(), /chart url 'README\.md' must be one of these file types/);
+});
+
+test('chart images: local images are embedded in the published PNG (no separate file needed in dist/)', async () => {
+  const { r, dir } = chartDir(imgSpec('pic.png'));
+  fs.writeFileSync(path.join(dir, 'pic.png'), await RED());
+  const svg = await renderChartRaw(dir);
+  const withImg = await rasterise(svg, dir);
+  const without = await rasterise(svg.replace(/<image[^>]*\/>/g, ''), dir);
+  assert.ok(!withImg.equals(without), 'the image changes the PNG, so it was resolved and drawn');
+  await assert.rejects(rasterise(svg), /needs the chart folder/);
+  assert.deepEqual((await buildCharts(r, { write: true })).errors, []);
+  assert.ok(fs.readFileSync(path.join(r, 'media/demo/c.png')).equals(withImg));
+  assert.deepEqual((await buildCharts(r)).errors, [], 'check mode re-rasterises with the image too');
+  const files = Object.keys(mediaOutputs(r));
+  assert.ok(files.some((f) => f.endsWith('demo/c.png')) && !files.some((f) => f.endsWith('pic.png')), 'only the PNG is published');
+});
+
+test('chart images: rasterise refuses an image that is not a safe in-folder raster file', async () => {
+  const { dir } = chartDir(SPEC);
+  fs.writeFileSync(path.join(dir, 'pic.png'), await RED());
+  fs.symlinkSync(path.join(dir, 'pic.png'), path.join(dir, 'link.png'));
+  const svg = (href) => `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="8" height="8"><image width="8" height="8" xlink:href="${href}"/></svg>`;
+  assert.ok(await rasterise(svg('pic.png'), dir));
+  await assert.rejects(rasterise(svg('link.png'), dir), /regular file inside the chart folder/);
+  await assert.rejects(rasterise(svg('../../../../etc/passwd'), dir), /regular file inside the chart folder/);
+  await assert.rejects(rasterise(svg('data.csv'), dir), /must be one of these file types: \.png/);
+});
+
+test('charts: CI re-rasterises and fails when the committed PNG drifts from a fresh render', async () => {
+  const { r } = chartDir({ ...SPEC, title: 'Demo' });
+  assert.deepEqual((await buildCharts(r, { write: true })).errors, []);
+  assert.deepEqual((await buildCharts(r)).errors, []);
+  // A PNG that matches render.json but not what the pinned renderer makes now (e.g. made with other fonts).
+  const other = await RED();
+  fs.writeFileSync(path.join(r, 'media/demo/c.png'), other);
+  const stampAbs = path.join(r, 'charts/demo/c/render.json');
+  const stamp = JSON.parse(fs.readFileSync(stampAbs, 'utf8'));
+  stamp.png_sha256 = (await import('node:crypto')).createHash('sha256').update(other).digest('hex');
+  fs.writeFileSync(stampAbs, JSON.stringify(stamp));
+  assert.match((await buildCharts(r)).errors.join(), /differs from a fresh rasterisation/);
+});
+
+test('charts: fonts are pinned to the committed Liberation Sans files, never system fonts', async () => {
+  for (const f of FONT_FILES) {
+    assert.ok(fs.statSync(f).size > 100000, f);
+    const side = fs.readFileSync(`${f}.license.yaml`, 'utf8');
+    for (const k of ['title:', 'author:', 'source_url:', 'license: OFL-1.1']) assert.ok(side.includes(k), `${f} sidecar has ${k}`);
+  }
+  assert.match(fs.readFileSync(path.join(REPO, 'fonts/OFL.txt'), 'utf8'), /SIL OPEN FONT LICENSE Version 1\.1/);
+  const text = (family, weight = 'normal') => rasterise(`<svg xmlns="http://www.w3.org/2000/svg" width="200" height="30"><text x="2" y="20" font-size="16" font-weight="${weight}" font-family="${family}">Aigora 123 čšž</text></svg>`);
+  const pinned = await text('Liberation Sans');
+  assert.ok((await text('sans-serif')).equals(pinned), 'sans-serif maps to the pinned font');
+  assert.ok((await text('DejaVu Sans')).equals(pinned), 'a system-only font is not loaded; the pinned default is used');
+  assert.ok(!(await text('sans-serif', 'bold')).equals(pinned), 'bold uses the committed bold file');
+  assert.match(fs.readFileSync(path.join(REPO, 'scripts/charts.js'), 'utf8'), /loadSystemFonts: false/);
+});
+
+test('chart images: absolute paths, data: and remote hrefs never reach the rasteriser', async () => {
+  const { dir } = chartDir(SPEC);
+  const svg = (href) => `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="8" height="8"><image width="8" height="8" xlink:href="${href}"/></svg>`;
+  await assert.rejects(rasterise(svg('/etc/hostname.png'), dir), /regular file inside the chart folder/);
+  await assert.rejects(rasterise(svg('https://evil.example/p.png'), dir), /regular file inside the chart folder/);
+  await assert.rejects(rasterise(svg('data:image/png;base64,AAAA'), dir), /regular file inside the chart folder/);
 });

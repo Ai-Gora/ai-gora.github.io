@@ -1,10 +1,11 @@
 // STYLE V3: chart sources live in charts/<slug>/<chart>/ (chart.vl.json, data, README.md). They are rendered
 // server-side to SVG (vega, no browser), and `npm run charts` rasterises that SVG to the only published file,
-// media/<slug>/<chart>.png. SVG is never published (STYLE V7). render.json records the SVG and PNG hashes so CI can
-// check, without a rasteriser, that the committed PNG was made from the current spec and data.
+// media/<slug>/<chart>.png. SVG is never published (STYLE V7). render.json records the SVG and PNG hashes, and CI also
+// rasterises each chart again with the pinned fonts and checks the result is byte-identical to the committed PNG.
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import * as vega from 'vega';
 import { compile } from 'vega-lite';
 
@@ -23,11 +24,16 @@ export function findCharts(root) {
   return out.sort();
 }
 
+// Chart data urls may only name data files; chart image marks may only name raster images resvg can decode.
+export const DATA_EXT = ['.csv', '.tsv', '.json', '.topojson', '.geojson', '.dsv', '.txt'];
+export const CHART_IMAGE_EXT = ['.png', '.jpg', '.jpeg', '.gif'];
+
 /**
  * Resolve a chart data url to an absolute path for reading only. Refuses schemes, absolute paths,
- * symlinks (at the file or any folder level) and anything whose real path is outside the chart folder.
+ * symlinks (at the file or any folder level), anything whose real path is outside the chart folder, and file types
+ * not in `exts` (data files by default; a chart cannot pull in e.g. README.md, .env or a script).
  */
-export function safeDataPath(dir, uri) {
+export function safeDataPath(dir, uri, exts = DATA_EXT) {
   const fail = () => new Error(`chart data url '${uri}' must be a regular file inside the chart folder (no symlinks)`);
   if (typeof uri !== 'string' || !uri || /^[a-z][a-z0-9+.-]*:/i.test(uri) || path.isAbsolute(uri)) throw fail();
   const realDir = fs.realpathSync(dir);
@@ -39,6 +45,7 @@ export function safeDataPath(dir, uri) {
   if (st.isSymbolicLink() || !st.isFile()) throw fail();
   const real = path.relative(realDir, fs.realpathSync(p));
   if (real !== rel) throw fail(); // a folder on the way is a symlink
+  if (!exts.includes(path.extname(uri).toLowerCase())) throw new Error(`chart url '${uri}' must be one of these file types: ${exts.join(', ')}`);
   return p;
 }
 
@@ -60,7 +67,7 @@ export function sanitizeChartUrl(dir, uri, context) {
     try { u = new URL(uri); } catch { return ''; }
     return u.protocol === 'https:' && u.hostname && !u.username && !u.password ? u.href : '';
   }
-  try { safeDataPath(dir, uri); } catch { return ''; }
+  try { safeDataPath(dir, uri, context === 'image' ? CHART_IMAGE_EXT : [...DATA_EXT, ...CHART_IMAGE_EXT]); } catch { return ''; }
   return uri;
 }
 
@@ -99,11 +106,39 @@ export async function renderChart(dir) {
 const CHART_DIR = /^charts\/([a-z0-9][a-z0-9-]*)\/([a-z0-9][a-z0-9-]*)$/;
 const sha256 = (b) => crypto.createHash('sha256').update(b).digest('hex');
 
-/** SVG string -> PNG Buffer at 2x, white background. Only `npm run charts` needs this; CI only checks hashes. */
-export async function rasterise(svg) {
+// Fonts are pinned: only the committed Liberation Sans files (OFL-1.1, fonts/*.license.yaml) are used, never system
+// fonts, so the same SVG gives byte-identical PNGs locally and in CI.
+export const FONT_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'fonts');
+export const FONT_FILES = ['LiberationSans-Regular.ttf', 'LiberationSans-Bold.ttf'].map((f) => path.join(FONT_DIR, f));
+
+const MIME = { '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.gif': 'image/gif' };
+const unescapeAttr = (v) => v.replace(/&quot;/g, '"').replace(/&apos;|&#39;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
+
+/**
+ * Inline every <image> href as a data: URI read from the chart folder. resvg would otherwise read relative and
+ * absolute paths from disk by itself (relative to the process, not the chart), so nothing is left for it to load.
+ */
+export function embedChartImages(svg, dir) {
+  return svg.replace(/<image\b[^>]*>/g, (tag) => tag.replace(/\b((?:xlink:)?href)="([^"]*)"/g, (_, attr, raw) => {
+    const href = unescapeAttr(raw);
+    if (!href) return `${attr}=""`;
+    if (!dir) throw new Error(`chart image '${href}' needs the chart folder to resolve`);
+    const p = safeDataPath(dir, href, CHART_IMAGE_EXT);
+    return `${attr}="data:${MIME[path.extname(p).toLowerCase()]};base64,${fs.readFileSync(p).toString('base64')}"`;
+  }));
+}
+
+/**
+ * SVG string -> PNG Buffer at 2x, white background, pinned fonts. Local chart images (<image href="pic.png">, already
+ * limited by sanitizeChartUrl) are read from the chart folder `dir` and embedded, so the published PNG shows them.
+ */
+export async function rasterise(svg, dir) {
   const { Resvg } = await import('@resvg/resvg-js');
-  const font = { loadSystemFonts: true, defaultFontFamily: 'Liberation Sans', sansSerifFamily: 'Liberation Sans' };
-  return Buffer.from(new Resvg(svg, { fitTo: { mode: 'zoom', value: 2 }, background: 'white', font }).render().asPng());
+  const font = { loadSystemFonts: false, fontFiles: FONT_FILES, defaultFontFamily: 'Liberation Sans', sansSerifFamily: 'Liberation Sans' };
+  const resvg = new Resvg(embedChartImages(svg, dir), { fitTo: { mode: 'zoom', value: 2 }, background: 'white', font });
+  const remote = resvg.imagesToResolve();
+  if (remote.length) throw new Error(`chart image '${remote[0]}' is remote; only in-folder images are allowed`);
+  return Buffer.from(resvg.render().asPng());
 }
 
 const chartSidecar = (rel, png, spec, buf) => [
@@ -141,7 +176,7 @@ export async function buildCharts(root, { write = false } = {}) {
     const pngAbs = path.join(root, pngRel);
     const stampAbs = path.join(dir, 'render.json');
     if (write) {
-      const png = await rasterise(svg);
+      const png = await rasterise(svg, dir);
       fs.mkdirSync(path.dirname(pngAbs), { recursive: true });
       fs.writeFileSync(pngAbs, png);
       const side = `${pngAbs}.license.yaml`;
@@ -154,6 +189,12 @@ export async function buildCharts(root, { write = false } = {}) {
     if (stamp.svg_sha256 !== sha256(svg)) errors.push(`${rel}: ${pngRel} is out of date with chart.vl.json/data; run npm run charts`);
     else if (!fs.existsSync(pngAbs)) errors.push(`${rel}: ${pngRel} missing; run npm run charts`);
     else if (stamp.png !== pngRel || stamp.png_sha256 !== sha256(fs.readFileSync(pngAbs))) errors.push(`${rel}: ${pngRel} does not match render.json (edited by hand?); run npm run charts`);
+    else {
+      // Rasterise again (pinned fonts) and compare with the committed PNG, so renderer or font drift is caught too.
+      let png;
+      try { png = await rasterise(svg, dir); } catch (e) { errors.push(`${rel}: rasterise failed: ${e.message}`); continue; }
+      if (!png.equals(fs.readFileSync(pngAbs))) errors.push(`${rel}: ${pngRel} differs from a fresh rasterisation (renderer/font drift?); run npm run charts`);
+    }
   }
   return { errors, count };
 }

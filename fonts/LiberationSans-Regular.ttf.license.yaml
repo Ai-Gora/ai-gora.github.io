@@ -1,0 +1,7 @@
+file: LiberationSans-Regular.ttf
+title: Liberation Sans Regular 2.1.5
+author: Red Hat, Inc. (Liberation fonts); digitized data Google Corporation
+source_url: https://github.com/liberationfonts/liberation-fonts/releases/tag/2.1.5
+license: OFL-1.1
+license_url: https://openfontlicense.org/open-font-license-official-text/
+notes: Full licence text in fonts/OFL.txt. Used only to rasterise charts (scripts/charts.js) so PNGs are the same on every machine. Not published to the site.
