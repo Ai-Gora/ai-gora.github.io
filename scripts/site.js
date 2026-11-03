@@ -140,18 +140,14 @@ function page({ title, base, lang = 'en', current, body, head = '', scripts = []
 ${csp ? `<meta http-equiv="Content-Security-Policy" content="${esc(csp)}">\n` : ''}<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${esc(title)}${title === SITE_NAME ? '' : ` · ${SITE_NAME}`}</title>
 ${description ? `<meta name="description" content="${esc(description)}">\n` : ''}<link rel="icon" href="data:,">
+<link rel="preload" href="${base}assets/source-serif-4.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="${base}assets/style.css">
 ${head}</head>
 <body>
 <a class="skip" href="#main">${L('skip')}</a>
 <header class="site">
-<a class="brand" href="${base}index.html">${SITE_NAME}</a>
+<a class="brand" href="${base}index.html"><svg aria-hidden="true" focusable="false" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 6.5 10 2l8 4.5M3 18h14M4.5 8.5v7M8.5 8.5v7M11.5 8.5v7M15.5 8.5v7M3 8h14"/></svg>${SITE_NAME}</a>
 <nav aria-label="${L('navSite')}"><ul>${nav}</ul></nav>
-<form class="quick-search" role="search" aria-label="${L('siteSearch')}" action="${base}search.html" method="get">
-<label for="site-q" class="visually-hidden">${L('searchArticles')}</label>
-<input id="site-q" name="q" type="search" placeholder="${L('searchPlaceholder')}" autocomplete="off">
-<button type="submit">${L('searchButton')}</button>
-</form>
 </header>
 <main id="main" tabindex="-1">
 ${body}
@@ -328,8 +324,9 @@ export function buildSite(content, data, opts = {}) {
   const articleItem = (a, base) => `<li><a href="${base}a/${a.fm.slug}.html" lang="${esc(a.fm.lang)}">${esc(a.fm.title)}</a> <span class="muted">· ${esc(levelLabel(a.fm.level))} · ${esc(langName(a.fm.lang))}</span><br><span class="desc" lang="${esc(a.fm.lang)}">${esc(a.fm.summary.trim().split('\n')[0])}</span></li>`;
   const usedTopics = topicsData.filter((t) => lessonPath(graph, topicsData, [t.id]).length);
 
-  out['index.html'] = page({ title: SITE_NAME, base: '', current: 'index.html', description: 'A free, open-source, permanent library readable by humans and machines.', body: `<h1>${SITE_NAME}</h1>
+  out['index.html'] = page({ title: SITE_NAME, base: '', current: 'index.html', description: 'A free, open-source, permanent library readable by humans and machines.', body: `<section class="hero"><h1>A library you can check.</h1>
 <p class="summary">A free, open-source, permanent library that humans and machines can both read. Every article states its sources, its confidence and when it should be reviewed.</p>
+<p class="hero-actions"><a class="button action" href="paths/index.html">Start a path</a> <a href="search.html">Search the library</a></p></section>
 <h2>Start a lesson path</h2>
 <p>Pick an interest and get an ordered reading list. <a href="paths/index.html">All lesson paths</a></p>
 <ul class="chips">${usedTopics.map((t) => `<li><a href="paths/${t.id}.html">${esc(t.title)}</a></li>`).join('')}</ul>
@@ -339,7 +336,7 @@ export function buildSite(content, data, opts = {}) {
   out['search.html'] = page({ title: 'Search', base: '', current: 'search.html', scripts: ['search.js'], body: `<h1>Search</h1>
 <form id="search" role="search" aria-label="Article search" action="search.html" method="get">
 <label for="q">Search articles and sections</label>
-<div class="row"><span class="field"><input id="q" name="q" type="search" autocomplete="off" placeholder=" " aria-describedby="search-help"><span class="caret" aria-hidden="true"></span></span><button type="submit">Search</button></div>
+<div class="row"><span class="field"><input id="q" name="q" type="search" autocomplete="off" aria-describedby="search-help"></span><button type="submit">Search</button></div>
 <p><label for="search-lang">Language</label> <select id="search-lang" name="lang"><option value="">All languages</option>${langs.map((c) => `<option value="${esc(c)}">${esc(langName(c))}</option>`).join('')}</select></p>
 <p id="search-help" class="muted">Matches titles, section headings and text.</p>
 </form>
@@ -411,7 +408,7 @@ ${pathList(lessonPath(graph, topicsData, [tp.id], { lang: code }), ctx, '../../'
     }
   }
 
-  for (const f of fs.readdirSync(ASSET_DIR).sort()) out[`assets/${f}`] = fs.readFileSync(path.join(ASSET_DIR, f), 'utf8');
+  for (const f of fs.readdirSync(ASSET_DIR).sort()) out[`assets/${f}`] = fs.readFileSync(path.join(ASSET_DIR, f), f.endsWith('.woff2') ? null : 'utf8'); // fonts stay binary
   // Self-hosted Mermaid (no CDN); diagram.js loads it only on pages that contain a diagram.
   out['assets/vendor/mermaid.min.js'] = fs.readFileSync(path.join(MERMAID_DIR, 'dist', 'mermaid.min.js'), 'utf8');
   out['assets/vendor/mermaid.LICENSE.txt'] = fs.readFileSync(path.join(MERMAID_DIR, 'LICENSE'), 'utf8');

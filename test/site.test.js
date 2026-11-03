@@ -319,8 +319,7 @@ test('article page: living-document strip and Review due notice', () => {
 test('lesson path and search carry the enhancement hooks', () => {
   assert.ok(site['paths/linguistics.html'].includes('<p class="path-progress" data-path-progress hidden></p>\n<ol class="path">'));
   assert.ok(site['paths/linguistics.html'].includes('class="step" data-slug="'));
-  assert.ok(site['search.html'].includes('placeholder=" "'));
-  assert.ok(site['search.html'].includes('<span class="caret" aria-hidden="true"></span>'));
+  assert.ok(!site['search.html'].includes('caret'), 'no blinking caret (ARTIST.md critique 12)');
 });
 
 test('QA: SL pages use the topics\' Slovenian titles/descriptions; missing ones fall back to English with lang="en"', () => {

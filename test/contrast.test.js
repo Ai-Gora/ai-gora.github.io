@@ -31,6 +31,8 @@ const PAIRS = [
   ['action', 'surface', 3], ['focus', 'surface', 3], ['border', 'surface', 3], ['border', 'surface-raised', 3],
   // Merged from main/#12: diagram captions and scroll regions, Mermaid source blocks, table borders.
   ['text-muted', 'surface-raised', 4.5], ['focus', 'surface-sunk', 3], ['border', 'surface-sunk', 3], ['link', 'surface-raised', 4.5],
+  // ARTIST remodel: quiz option rows are raised, buttons are filled with --action.
+  ['success', 'surface-raised', 4.5], ['error', 'surface-raised', 4.5],
 ];
 
 test('contrast test reads both token blocks', () => {

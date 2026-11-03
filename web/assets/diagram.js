@@ -21,7 +21,14 @@ if (blocks.length) {
   try {
     const mermaid = await loadMermaid();
     const dark = window.matchMedia?.('(prefers-color-scheme: dark)').matches;
-    mermaid.initialize({ startOnLoad: false, securityLevel: 'strict', secure: MERMAID_SECURE, theme: dark ? 'dark' : 'default' });
+    // Theme from the page's design tokens (ARTIST.md 3.7): paper fill, ink text, rule lines, sans labels.
+    const css = getComputedStyle(document.documentElement);
+    const tok = (n) => css.getPropertyValue(`--${n}`).trim();
+    mermaid.initialize({ startOnLoad: false, securityLevel: 'strict', secure: MERMAID_SECURE, theme: 'base', darkMode: Boolean(dark), themeVariables: {
+      fontFamily: tok('font-sans'), fontSize: '16px', background: tok('surface'), primaryColor: tok('surface-raised'), primaryTextColor: tok('text'),
+      primaryBorderColor: tok('border'), lineColor: tok('border'), secondaryColor: tok('surface-sunk'), tertiaryColor: tok('surface'), textColor: tok('text'),
+      mainBkg: tok('surface-raised'), nodeBorder: tok('border'), clusterBkg: tok('surface-sunk'), edgeLabelBackground: tok('surface'),
+    } });
     let n = 0;
     for (const pre of blocks) {
       const problems = mermaidProblems(pre.textContent);
