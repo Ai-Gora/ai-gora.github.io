@@ -590,3 +590,19 @@ test('chart images: absolute paths, data: and remote hrefs never reach the raste
   await assert.rejects(rasterise(svg('https://evil.example/p.png'), dir), /regular file inside the chart folder/);
   await assert.rejects(rasterise(svg('data:image/png;base64,AAAA'), dir), /regular file inside the chart folder/);
 });
+
+test('guard: ordinary labels "Data: CPU/GPU" and nodes named Link/Callback pass (ARTIST remodel follow-up)', () => {
+  const SAFE = 'flowchart LR\n  accTitle: t\n  accDescr: d';
+  for (const body of ['A["Data: CPU/GPU"] --> B', 'A@{ shape: rect, label: "Data: CPU/GPU" }', 'A["Data: CPU/GPU; RAM"] --> B', 'Link --> Callback', 'Link[Link] --> B', 'Callback & Link --> C', 'Calls[Call log] --> Linker']) {
+    assert.deepEqual(mermaidProblems(`${SAFE}\n  ${body}`), [], body);
+  }
+});
+
+test('guard: the narrowed rules still reject the real statements and data: URLs', () => {
+  for (const body of ['link A "https://x.test"', 'callback A "fn"', 'call A', 'click A fn', 'click Link', 'href A "x"', 'links A "x"']) {
+    assert.ok(mermaidProblems(`classDiagram\n  ${body}`).length, body);
+  }
+  for (const body of ['A["data: image/png;base64,AAAA"]', 'A@{ shape: rect, label: "data:image/png" }', 'A["data: text/html,x"]', 'A@{ label: "data:\n image/svg+xml" }']) {
+    assert.ok(mermaidProblems(`flowchart LR\n  ${body}`).length, body);
+  }
+});

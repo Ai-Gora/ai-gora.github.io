@@ -6,11 +6,14 @@
 
 // A URL payload starts right after the scheme or "//": not a space and not the end of a label.
 const PAYLOAD = String.raw`(?=[^\s"'\])|}\]])`;
+// Real data: URLs name a registered MIME top-level type; "Data: CPU/GPU" is a label, not a URL.
+const MIME = '(?:image|text|application|font|audio|video|model|multipart|message|x-[a-z0-9-]+)';
 const RAW = [
   [/\\/, 'backslashes are not allowed'],
   [/<\/?[a-z!?][^>]*>/i, 'HTML is not allowed'],
   [/["']?\bimg["']?\s*:/i, 'img: shapes are not allowed'],
-  [/(^|[;}])[^\S\n]*(?:click|call|href|callback|links?)\b/im, 'click/href statements are not allowed (diagrams are not interactive)'],
+  // click is always a statement; link/callback/call/href only when followed by a target (so nodes named Link or Callback pass).
+  [/(^|[;}])[^\S\n]*(?:click\b|(?:call|href|callback|links?)(?=[^\S\n]+[\w"'`]))/im, 'click/href statements are not allowed (diagrams are not interactive)'],
 ];
 const SQUASHED = [ // all whitespace removed
   [/%%\{/, 'init directive %%{...}%% is not allowed'],
@@ -21,7 +24,7 @@ const SQUASHED = [ // all whitespace removed
 const URLISH = [ // tabs, newlines and control characters removed, spaces kept
   [new RegExp(`https?:${PAYLOAD}|(?:^|[^a-z0-9._~-])//(?=[^\\s/"'\\])|}\\]])|(?:^|[^a-z0-9._~-])///`), 'external URLs are not allowed'],
   [new RegExp(`\\b(?:data|javascript|vbscript|blob|file):${PAYLOAD}`), 'data:/javascript: URLs are not allowed'],
-  [/\bdata:\s*[a-z]+\/[a-z0-9.+-]+[;,]/, 'data:/javascript: URLs are not allowed'], // "data: image/png;base64,…"
+  [new RegExp(String.raw`\bdata:\s*${MIME}\/[a-z0-9.+-]+[;,]`), 'data:/javascript: URLs are not allowed'], // "data: image/png;base64,…"
 ];
 
 // Shape data (A@{ ... }) is YAML, where anchors/aliases (&k, *k), complex keys (? k), tags (!t) and literal
@@ -37,7 +40,7 @@ const SHAPE_RAW = [
 ];
 const SHAPE_SQUASHED = [
   [/\/\/|https?:\/|(?:^|[^a-z0-9])(?:javascript|vbscript|blob|file):/, 'external URLs are not allowed'],
-  [/data:[a-z]+\//, 'data:/javascript: URLs are not allowed'],
+  [new RegExp(String.raw`data:${MIME}\/`), 'data:/javascript: URLs are not allowed'],
 ];
 export function shapeBlocks(text) {
   const out = [];
