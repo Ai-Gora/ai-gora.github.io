@@ -1,0 +1,37 @@
+article: aig-000031
+questions:
+  - id: q1
+    type: true_false
+    prompt: Setting NO_COLOR=0 should still stop compliant software from adding colour.
+    answer: true
+    explain: The variable counts when it is present and not empty, whatever its value.
+    ref: terminal-interface-design#no-color
+    difficulty: 2
+    tags: [no-color]
+  - id: q2
+    type: single
+    prompt: What minimum contrast ratio does WCAG 1.4.3 set for normal text?
+    options: ["3:1", "4.5:1", "7:1"]
+    answer: 1
+    explain: Normal text needs 4.5:1. Large text needs 3:1.
+    ref: terminal-interface-design#colour
+    difficulty: 1
+    tags: [contrast, wcag]
+  - id: q3
+    type: single
+    prompt: Which rendering model does Ratatui use?
+    options: ["Retained mode", "Immediate mode", "The Elm Architecture"]
+    answer: 1
+    explain: Ratatui redraws the whole interface from the app state on every frame.
+    ref: terminal-interface-design#frameworks
+    difficulty: 1
+    tags: [ratatui]
+  - id: q4
+    type: single
+    prompt: What does Huh's accessible mode do?
+    options: ["Raises the contrast", "Drops the TUI in favour of standard prompts", "Adds sound effects"]
+    answer: 1
+    explain: Standard prompts work better with screen readers and dictation.
+    ref: terminal-interface-design#accessibility
+    difficulty: 1
+    tags: [accessibility]
